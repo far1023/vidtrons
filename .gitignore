@@ -1,3 +1,4 @@
+
 # dependencies
 /node_modules
 /.pnp
@@ -34,3 +35,6 @@ pnpm-debug.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# keep the env template committed
+!.env.example
