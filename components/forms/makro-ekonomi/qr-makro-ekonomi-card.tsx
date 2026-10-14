@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import QRCode from "qrcode"
 import { toast } from "sonner"
 import { Loader2, QrCode, Save, Sparkles } from "lucide-react"
 
@@ -12,9 +13,30 @@ import { Button } from "@/components/ui/button"
 export function QrMakroEkonomiCard() {
   const [makroQrUrl, setMakroQrUrl] = React.useState("")
   const [makroQrLabel, setMakroQrLabel] = React.useState("")
+  const [defaultQrDataUrl, setDefaultQrDataUrl] = React.useState<string | null>(null)
   const [isLoading, setIsLoading] = React.useState(true)
   const [isSaving, setIsSaving] = React.useState(false)
   const [previewError, setPreviewError] = React.useState(false)
+
+  // Generate QR Code default yang mengarah ke /grafik-makro-ekonomi
+  React.useEffect(() => {
+    const targetUrl =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/grafik-makro-ekonomi`
+        : "/grafik-makro-ekonomi"
+
+    QRCode.toDataURL(targetUrl, {
+      width: 256,
+      margin: 1,
+      color: {
+        dark: "#064e3b",
+        light: "#ffffff",
+      },
+      errorCorrectionLevel: "M",
+    })
+      .then((url) => setDefaultQrDataUrl(url))
+      .catch((err) => console.error("Gagal generate default QR code:", err))
+  }, [])
 
   // Fetch current setting
   const fetchSettings = React.useCallback(async () => {
@@ -63,7 +85,11 @@ export function QrMakroEkonomiCard() {
 
       const json = await res.json()
       if (!res.ok) {
-        throw new Error(json.error?.message || "Gagal menyimpan pengaturan QR Code")
+        const errorMsg =
+          json.details && Array.isArray(json.details)
+            ? json.details.map((d: { message?: string }) => d.message).filter(Boolean).join(", ")
+            : json.error?.message || "Gagal menyimpan pengaturan QR Code"
+        throw new Error(errorMsg)
       }
 
       toast.success("Pengaturan QR Code Makro Ekonomi berhasil disimpan")
@@ -103,7 +129,7 @@ export function QrMakroEkonomiCard() {
             <div className="flex-1 w-full space-y-3">
               <div className="space-y-1.5">
                 <Label htmlFor="makro-qr-url" className="text-xs font-medium">
-                  URL Gambar QR Code (HTTPS)
+                  URL Gambar QR Code Kustom (Opsional)
                 </Label>
                 <Input
                   id="makro-qr-url"
@@ -112,8 +138,8 @@ export function QrMakroEkonomiCard() {
                   placeholder="Contoh: https://example.com/qr-satudata.png"
                   className="text-xs h-9"
                 />
-                <p className="text-[0.7rem] text-muted-foreground">
-                  Gunakan URL langsung ke berkas gambar QR (.png / .jpg / .svg).
+                <p className="text-[0.7rem] text-muted-foreground leading-relaxed">
+                  Kosongkan kolom ini jika ingin menggunakan <strong>QR Code bawaan sistem</strong> yang otomatis mengarah ke halaman grafik makro ekonomi (<code className="text-emerald-800 dark:text-emerald-300">/grafik-makro-ekonomi</code>). Isi tautan berkas gambar (<code className="text-xs">https://</code>) jika ingin menggantinya dengan QR kustom.
                 </p>
               </div>
 
@@ -125,10 +151,13 @@ export function QrMakroEkonomiCard() {
                   id="makro-qr-label"
                   value={makroQrLabel}
                   onChange={(e) => setMakroQrLabel(e.target.value)}
-                  placeholder="Contoh: Satu Data Kota Dumai"
+                  placeholder="Contoh: Pindai Grafik Makro"
                   maxLength={100}
                   className="text-xs h-9"
                 />
+                <p className="text-[0.7rem] text-muted-foreground">
+                  Teks ringkas yang ditampilkan di bawah atau keterangan QR Code.
+                </p>
               </div>
 
               <div className="pt-1">
@@ -156,11 +185,19 @@ export function QrMakroEkonomiCard() {
               </span>
               <div className="relative size-28 aspect-square rounded-xl bg-white p-1.5 border border-emerald-950/15 shadow-xs flex flex-col items-center justify-center overflow-hidden">
                 {makroQrUrl && !previewError ? (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={makroQrUrl}
                     alt="Preview QR"
                     className="size-full object-contain"
                     onError={() => setPreviewError(true)}
+                  />
+                ) : defaultQrDataUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={defaultQrDataUrl}
+                    alt="Preview QR Default"
+                    className="size-full object-contain"
                   />
                 ) : (
                   <div className="flex size-full flex-col items-center justify-center rounded-lg bg-emerald-50/70 p-1 text-center">
@@ -171,8 +208,8 @@ export function QrMakroEkonomiCard() {
                   </div>
                 )}
               </div>
-              <span className="text-[0.65rem] text-muted-foreground mt-1.5">
-                {makroQrLabel || "Pindai Data"}
+              <span className="text-[0.65rem] text-muted-foreground mt-1.5 font-medium">
+                {makroQrLabel || (makroQrUrl ? "Pindai Data" : "Default: /grafik-makro-ekonomi")}
               </span>
             </div>
           </form>

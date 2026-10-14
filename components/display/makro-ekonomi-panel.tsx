@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import QRCode from "qrcode"
 import {
   ArrowDown,
   ArrowUp,
@@ -94,7 +95,40 @@ export function MakroEkonomiPanel({
   speed = 60,
 }: MakroEkonomiPanelProps) {
   const [qrError, setQrError] = useState(false)
+  const [defaultQrDataUrl, setDefaultQrDataUrl] = useState<string | null>(null)
   const displayItems = items && items.length > 0 ? items : DEFAULT_ITEMS
+
+  // Reset qrError saat prop qrUrl berubah
+  useEffect(() => {
+    setQrError(false)
+  }, [qrUrl])
+
+  // Generate QR code default ke /grafik-makro-ekonomi menggunakan library qrcode
+  useEffect(() => {
+    const targetUrl =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/grafik-makro-ekonomi`
+        : "/grafik-makro-ekonomi"
+
+    QRCode.toDataURL(targetUrl, {
+      width: 280,
+      margin: 1,
+      color: {
+        dark: "#064e3b",
+        light: "#ffffff",
+      },
+      errorCorrectionLevel: "M",
+    })
+      .then((dataUrl) => setDefaultQrDataUrl(dataUrl))
+      .catch((err) => {
+        console.error("Gagal membuat QR Code default:", err)
+      })
+  }, [])
+
+  // Jika user sudah pernah input manual di DB (qrUrl), gunakan dari DB.
+  // Jika tidak ada atau error, gunakan hasil generate default.
+  const effectiveQr = qrUrl && !qrError ? qrUrl : defaultQrDataUrl
+  const labelText = qrLabel || (qrUrl ? "Pindai Data" : "Grafik Makro")
 
   return (
     <Panel
@@ -130,22 +164,26 @@ export function MakroEkonomiPanel({
       {/* QR Code 1:1 di sisi kanan */}
       <div
         className="relative flex aspect-square h-full shrink-0 flex-col items-center justify-center overflow-hidden rounded-2xl bg-white p-2 shadow-xs ring-1 ring-emerald-950/10"
-        title={qrLabel || "QR Code Makro Ekonomi"}
+        title={labelText}
       >
-        {qrUrl && !qrError ? (
+        {effectiveQr ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            key={qrUrl}
-            src={qrUrl}
-            alt={qrLabel || "QR Code Makro Ekonomi"}
+            key={effectiveQr}
+            src={effectiveQr}
+            alt={labelText}
             className="h-full w-full object-contain"
-            onError={() => setQrError(true)}
+            onError={() => {
+              if (qrUrl && !qrError) {
+                setQrError(true)
+              }
+            }}
           />
         ) : (
           <div className="flex h-full w-full flex-col items-center justify-center rounded-xl bg-emerald-50/70 p-2 text-center">
-            <QrCode className="size-8 text-emerald-700" />
+            <QrCode className="size-8 text-emerald-700 animate-pulse" />
             <span className="mt-1 line-clamp-1 text-xs font-bold text-emerald-900">
-              {qrLabel || "Pindai Data"}
+              {labelText}
             </span>
           </div>
         )}
