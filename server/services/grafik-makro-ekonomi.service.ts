@@ -5,8 +5,8 @@ import { buildGrafikMakro, type GrafikMakro } from "@/lib/makro-ekonomi"
 import * as makroEkonomiModel from "@/server/models/makro-ekonomi.model"
 
 async function fetchGrafik(): Promise<GrafikMakro | null> {
-  // Butuh SEMUA baris aktif lintas tahun (bukan hanya tahun terbaru)
-  const rows = await makroEkonomiModel.active()
+  // Mengambil seluruh baris data lintas tahun (termasuk riwayat tahun-tahun sebelumnya)
+  const rows = await makroEkonomiModel.all()
   return buildGrafikMakro(rows)
 }
 

@@ -14,6 +14,7 @@ export type MakroRow = {
   tahun: string
   tren: string
   urutan: number
+  isActive?: boolean
 }
 
 export type Arah = "naik" | "turun" | "tetap"
@@ -181,9 +182,14 @@ export function buildGrafikMakro(
     })
 
     const terisi = titik.filter((t) => t.nilai !== null)
+    if (terisi.length === 0) continue
     const terbaru = terisi[terisi.length - 1]
     const pembanding = terisi[terisi.length - 2]
     const latestRow = byYear.get(terbaru.tahun)!.row
+
+    // Jika data tahun terbaru dinonaktifkan oleh admin, lewati indikator ini
+    if (latestRow.isActive === false) continue
+
     const satuan = latestRow.satuan.trim()
 
     let delta: Indikator["delta"] = null
