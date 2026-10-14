@@ -1,6 +1,6 @@
 import "server-only";
 import { NotFoundError } from "@/server/errors/app-error";
-import { revalidateDisplayCache } from "@/server/services/cache";
+import { broadcastPanelUpdate } from "@/server/services/realtime.service";
 import * as makroEkonomiModel from "@/server/models/makro-ekonomi.model";
 import type {
   CreateMakroEkonomiInput,
@@ -29,7 +29,7 @@ export async function createMakroEkonomi(
   data: CreateMakroEkonomiInput
 ): Promise<makroEkonomiModel.MakroEkonomiRow> {
   const created = await makroEkonomiModel.create(data);
-  revalidateDisplayCache();
+  await broadcastPanelUpdate("makroEkonomi");
   return created;
 }
 
@@ -47,7 +47,7 @@ export async function updateMakroEkonomi(
     throw new NotFoundError(`Indikator makro ekonomi dengan ID ${id} tidak ditemukan`);
   }
 
-  revalidateDisplayCache();
+  await broadcastPanelUpdate("makroEkonomi");
   return updated;
 }
 
@@ -62,6 +62,6 @@ export async function deleteMakroEkonomi(id: number): Promise<boolean> {
     throw new NotFoundError(`Indikator makro ekonomi dengan ID ${id} gagal dihapus`);
   }
 
-  revalidateDisplayCache();
+  await broadcastPanelUpdate("makroEkonomi");
   return true;
 }

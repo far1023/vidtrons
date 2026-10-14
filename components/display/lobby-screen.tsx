@@ -13,10 +13,15 @@ import { WaktuPanel } from "@/components/display/waktu-panel"
 import { useDisplayData } from "@/hooks/use-display-data"
 import { useMidnightRefresh } from "@/hooks/use-midnight-refresh"
 
+interface DisplayScreenProps {
+  pusherKey?: string;
+  pusherCluster?: string;
+}
+
 /** The only component that knows the grid. Panels fill their cell. */
-export function DisplayScreen() {
+export function DisplayScreen({ pusherKey, pusherCluster }: DisplayScreenProps = {}) {
   useMidnightRefresh()
-  const { data } = useDisplayData()
+  const { data } = useDisplayData({ pusherKey, pusherCluster })
 
   return (
     <div className="relative isolate grid h-screen w-screen grid-rows-[var(--rows-screen)] overflow-hidden bg-[#fff9f4] text-[var(--c-text)]">

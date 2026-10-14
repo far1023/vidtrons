@@ -16,7 +16,12 @@ async function fetcher(url: string): Promise<DisplayFeedData> {
   return json.data;
 }
 
-export function useDisplayData() {
+export interface UseDisplayDataOptions {
+  pusherKey?: string;
+  pusherCluster?: string;
+}
+
+export function useDisplayData(options?: UseDisplayDataOptions) {
   const memoryFallbackRef = useRef<DisplayFeedData | null>(null);
   const [cachedData, setCachedData] = useState<DisplayFeedData | null>(null);
 
@@ -51,6 +56,157 @@ export function useDisplayData() {
       },
     }
   );
+
+  // Pusher Realtime Subscription (per-panel update)
+  const initialKey =
+    options?.pusherKey ||
+    process.env.NEXT_PUBLIC_PUSHER_KEY ||
+    process.env.PUSHER_KEY ||
+    "";
+
+  const initialCluster =
+    options?.pusherCluster ||
+    process.env.NEXT_PUBLIC_PUSHER_CLUSTER ||
+    process.env.PUSHER_CLUSTER ||
+    "ap1";
+
+  const [activeKey, setActiveKey] = useState<string>(initialKey);
+  const [activeCluster, setActiveCluster] = useState<string>(initialCluster);
+
+  // If Pusher key is not yet present on client, fetch it dynamically from /api/display/config
+  useEffect(() => {
+    if (activeKey) return;
+
+    fetch("/api/display/config")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((cfg) => {
+        if (cfg?.pusher?.key) {
+          setActiveKey(cfg.pusher.key);
+          if (cfg.pusher.cluster) {
+            setActiveCluster(cfg.pusher.cluster);
+          }
+        } else {
+          console.warn(
+            "[Pusher Client] PUSHER_KEY belum terdeteksi. Pastikan PUSHER_KEY sudah diset di .env.local dan server telah direstart."
+          );
+        }
+      })
+      .catch((err) => {
+        console.warn("[Pusher Client] Gagal memuat konfigurasi Pusher:", err);
+      });
+  }, [activeKey]);
+
+  useEffect(() => {
+    if (!activeKey) return;
+
+    let isSubscribed = true;
+    let pusher: import("pusher-js").default | null = null;
+
+    import("pusher-js").then(({ default: PusherClient }) => {
+      if (!isSubscribed) return;
+
+      console.log(
+        `[Pusher Client] Menghubungkan ke Pusher (cluster: ${activeCluster})...`
+      );
+
+      pusher = new PusherClient(activeKey, {
+        cluster: activeCluster,
+      });
+
+      pusher.connection.bind("connected", () => {
+        console.log("[Pusher Client] Sukses terhubung ke Pusher server.");
+      });
+
+      pusher.connection.bind("error", (err: unknown) => {
+        console.error("[Pusher Client] Error koneksi Pusher:", err);
+      });
+
+      const channel = pusher.subscribe("display-lobby");
+
+      channel.bind("pusher:subscription_succeeded", () => {
+        console.log(
+          "[Pusher Client] Berhasil subscribe ke channel 'display-lobby'."
+        );
+      });
+
+      channel.bind(
+        "panel-update",
+        async (payload: { panel?: string; data?: unknown }) => {
+          if (!payload?.panel) return;
+
+          console.log(
+            `[Pusher Client] Menerima event update untuk panel '${payload.panel}':`,
+            payload
+          );
+
+          const panelKeyMap: Record<string, keyof DisplayFeedData> = {
+            pengumuman: "pengumuman",
+            agenda: "agenda",
+            runningText: "runningText",
+            "running-text": "runningText",
+            promo: "promo",
+            video: "video",
+            makroEkonomi: "makroEkonomi",
+            "makro-ekonomi": "makroEkonomi",
+            setting: "setting",
+          };
+
+          const targetKey = panelKeyMap[payload.panel];
+          if (!targetKey) return;
+
+          let panelData = payload.data;
+
+          // If payload did not embed fresh data, fetch only this panel from server
+          if (panelData === undefined) {
+            try {
+              const res = await fetch(`/api/display?panel=${targetKey}`);
+              if (res.ok) {
+                const json = await res.json();
+                panelData =
+                  json?.data?.data !== undefined ? json.data.data : json?.data;
+              }
+            } catch (fetchErr) {
+              console.warn(
+                `[Pusher Client] Gagal mengambil update data panel '${targetKey}':`,
+                fetchErr
+              );
+              return;
+            }
+          }
+
+          if (panelData !== undefined) {
+            // Mutate ONLY the specific panel inside SWR without triggering a full revalidation
+            mutate((prev) => {
+              if (!prev) return prev;
+              const updated: DisplayFeedData = {
+                ...prev,
+                [targetKey]: panelData,
+              };
+              memoryFallbackRef.current = updated;
+              try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+              } catch {
+                // ignore storage error
+              }
+              return updated;
+            }, false);
+
+            console.log(
+              `[Pusher Client] Panel '${targetKey}' berhasil diperbarui di layar lobby!`
+            );
+          }
+        }
+      );
+    });
+
+    return () => {
+      isSubscribed = false;
+      if (pusher) {
+        pusher.unsubscribe("display-lobby");
+        pusher.disconnect();
+      }
+    };
+  }, [activeKey, activeCluster, mutate]);
 
   // Fallback hierarchy: fresh SWR data -> in-memory ref -> localStorage state
   const effectiveData = data ?? memoryFallbackRef.current ?? cachedData;

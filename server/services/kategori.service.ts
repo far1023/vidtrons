@@ -1,6 +1,6 @@
 import "server-only";
 import { NotFoundError } from "@/server/errors/app-error";
-import { revalidateDisplayCache } from "@/server/services/cache";
+import { broadcastPanelUpdate } from "@/server/services/realtime.service";
 import * as kategoriModel from "@/server/models/kategori.model";
 import type {
   CreateKategoriInput,
@@ -23,7 +23,7 @@ export async function createKategori(
   data: CreateKategoriInput
 ): Promise<kategoriModel.KategoriRow> {
   const created = await kategoriModel.create(data);
-  revalidateDisplayCache();
+  await broadcastPanelUpdate("pengumuman");
   return created;
 }
 
@@ -41,7 +41,7 @@ export async function updateKategori(
     throw new NotFoundError(`Kategori dengan ID ${id} tidak ditemukan`);
   }
 
-  revalidateDisplayCache();
+  await broadcastPanelUpdate("pengumuman");
   return updated;
 }
 
@@ -56,6 +56,6 @@ export async function deleteKategori(id: number): Promise<boolean> {
     throw new NotFoundError(`Kategori dengan ID ${id} gagal dihapus`);
   }
 
-  revalidateDisplayCache();
+  await broadcastPanelUpdate("pengumuman");
   return true;
 }

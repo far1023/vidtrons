@@ -75,3 +75,89 @@ export async function getDisplayFeed(): Promise<DisplayFeedData> {
     throw error;
   }
 }
+
+/**
+ * Fetches data for only a specific panel.
+ * Used for targeted realtime Pusher payloads and single-panel API requests.
+ */
+export async function getPanelFeed(panel: string): Promise<unknown> {
+  switch (panel) {
+    case "pengumuman": {
+      const list = await pengumumanModel.activeWithKategori();
+      return list.map((p) => ({
+        id: p.id,
+        judul: p.judul,
+        tanggal: p.tanggal,
+        kategori: p.kategoriNama
+          ? {
+              nama: p.kategoriNama,
+              warna: p.kategoriWarna || "#10b981",
+            }
+          : null,
+      }));
+    }
+    case "agenda": {
+      const todayDateStr = getTodayDateString();
+      const list = await agendaModel.today(todayDateStr);
+      return list.map((a) => ({
+        id: a.id,
+        judul: a.judul,
+        mulai: a.mulai,
+        selesai: a.selesai,
+        lokasi: a.lokasi,
+        tanggal: a.tanggal,
+      }));
+    }
+    case "runningText":
+    case "running-text": {
+      const list = await runningTextModel.active();
+      return list.map((r) => ({
+        id: r.id,
+        isi: r.isi,
+      }));
+    }
+    case "promo": {
+      const list = await promoModel.active();
+      return list.map((pr) => ({
+        id: pr.id,
+        judul: pr.judul,
+        gambarUrl: pr.gambarUrl,
+        urutan: pr.urutan,
+      }));
+    }
+    case "video": {
+      const list = await videoModel.active();
+      return list.map((v) => ({
+        id: v.id,
+        judul: v.judul,
+        url: v.url,
+        urutan: v.urutan,
+      }));
+    }
+    case "makroEkonomi":
+    case "makro-ekonomi": {
+      const list = await makroEkonomiModel.active();
+      return list.map((m) => ({
+        id: m.id,
+        judul: m.judul,
+        nilai: m.nilai,
+        satuan: m.satuan,
+        tahun: m.tahun,
+        tren: (m.tren as "naik" | "turun" | "tetap") || "tetap",
+        urutan: m.urutan,
+      }));
+    }
+    case "setting": {
+      const map = await settingModel.getMap();
+      return {
+        namaInstansi: map.namaInstansi || "Bappeda Kota Dumai",
+        slogan: map.slogan || "Mewujudkan Dumai Kota IDAMAN",
+        logoUrl: map.logoUrl || null,
+        makroQrUrl: map.makroQrUrl || null,
+        makroQrLabel: map.makroQrLabel || null,
+      };
+    }
+    default:
+      return undefined;
+  }
+}

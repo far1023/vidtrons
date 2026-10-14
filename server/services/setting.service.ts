@@ -1,5 +1,5 @@
 import "server-only";
-import { revalidateDisplayCache } from "@/server/services/cache";
+import { broadcastPanelUpdate } from "@/server/services/realtime.service";
 import * as settingModel from "@/server/models/setting.model";
 import type { UpdateSettingsInput } from "@/lib/schemas/setting.schema";
 
@@ -29,6 +29,6 @@ export async function updateSettings(
   }
 
   const updatedMap = await settingModel.setMany(items);
-  revalidateDisplayCache();
+  await broadcastPanelUpdate("setting");
   return updatedMap;
 }

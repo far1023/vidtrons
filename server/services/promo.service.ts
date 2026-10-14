@@ -1,6 +1,6 @@
 import "server-only";
 import { NotFoundError } from "@/server/errors/app-error";
-import { revalidateDisplayCache } from "@/server/services/cache";
+import { broadcastPanelUpdate } from "@/server/services/realtime.service";
 import * as promoModel from "@/server/models/promo.model";
 import type {
   CreatePromoInput,
@@ -23,7 +23,7 @@ export async function createPromo(
   data: CreatePromoInput
 ): Promise<promoModel.PromoRow> {
   const created = await promoModel.create(data);
-  revalidateDisplayCache();
+  await broadcastPanelUpdate("promo");
   return created;
 }
 
@@ -41,7 +41,7 @@ export async function updatePromo(
     throw new NotFoundError(`Promo dengan ID ${id} tidak ditemukan`);
   }
 
-  revalidateDisplayCache();
+  await broadcastPanelUpdate("promo");
   return updated;
 }
 
@@ -56,6 +56,6 @@ export async function deletePromo(id: number): Promise<boolean> {
     throw new NotFoundError(`Promo dengan ID ${id} gagal dihapus`);
   }
 
-  revalidateDisplayCache();
+  await broadcastPanelUpdate("promo");
   return true;
 }

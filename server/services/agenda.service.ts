@@ -1,6 +1,6 @@
 import "server-only";
 import { NotFoundError } from "@/server/errors/app-error";
-import { revalidateDisplayCache } from "@/server/services/cache";
+import { broadcastPanelUpdate } from "@/server/services/realtime.service";
 import * as agendaModel from "@/server/models/agenda.model";
 import type {
   CreateAgendaInput,
@@ -23,7 +23,7 @@ export async function createAgenda(
   data: CreateAgendaInput
 ): Promise<agendaModel.AgendaRow> {
   const created = await agendaModel.create(data);
-  revalidateDisplayCache();
+  await broadcastPanelUpdate("agenda");
   return created;
 }
 
@@ -41,7 +41,7 @@ export async function updateAgenda(
     throw new NotFoundError(`Agenda dengan ID ${id} tidak ditemukan`);
   }
 
-  revalidateDisplayCache();
+  await broadcastPanelUpdate("agenda");
   return updated;
 }
 
@@ -56,6 +56,6 @@ export async function deleteAgenda(id: number): Promise<boolean> {
     throw new NotFoundError(`Agenda dengan ID ${id} gagal dihapus`);
   }
 
-  revalidateDisplayCache();
+  await broadcastPanelUpdate("agenda");
   return true;
 }

@@ -1,6 +1,6 @@
 import "server-only";
 import { NotFoundError } from "@/server/errors/app-error";
-import { revalidateDisplayCache } from "@/server/services/cache";
+import { broadcastPanelUpdate } from "@/server/services/realtime.service";
 import * as pengumumanModel from "@/server/models/pengumuman.model";
 import type {
   CreatePengumumanInput,
@@ -27,7 +27,7 @@ export async function createPengumuman(
   data: CreatePengumumanInput
 ): Promise<pengumumanModel.PengumumanWithKategoriRow> {
   const created = await pengumumanModel.create(data);
-  revalidateDisplayCache();
+  await broadcastPanelUpdate("pengumuman");
   // Fetch with joined kategori details
   const full = await pengumumanModel.find(created.id);
   if (!full) {
@@ -50,7 +50,7 @@ export async function updatePengumuman(
     throw new NotFoundError(`Pengumuman dengan ID ${id} tidak ditemukan`);
   }
 
-  revalidateDisplayCache();
+  await broadcastPanelUpdate("pengumuman");
   const full = await pengumumanModel.find(id);
   if (!full) {
     throw new NotFoundError(`Pengumuman dengan ID ${id} tidak ditemukan`);
@@ -69,6 +69,6 @@ export async function deletePengumuman(id: number): Promise<boolean> {
     throw new NotFoundError(`Pengumuman dengan ID ${id} gagal dihapus`);
   }
 
-  revalidateDisplayCache();
+  await broadcastPanelUpdate("pengumuman");
   return true;
 }

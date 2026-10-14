@@ -215,3 +215,13 @@ T1 to T15 done. Login & Admin Layout completed! Next task: T16 (Admin CRUD: Peng
     - Aturan: email unik dan disimpan huruf kecil (login ikut dinormalisasi di lib/auth.ts), password minimal 8 karakter, password opsional saat ubah, tidak bisa menghapus akun sendiri maupun pengguna terakhir (ConflictError 409 baru di server/errors/app-error.ts). with-auth.ts kini mengekspor eadSessionToken.
     - Verifikasi: 
 pm run build lulus; API diuji (buat, duplikat 409, validasi 422, ubah, hapus 204, dashboard).
+
+- Fitur Realtime Pusher per Panel (Layar Lobby):
+  - Mengintegrasikan package pusher (server) dan pusher-js (client).
+  - Menambahkan konstanta PUSHER_DISPLAY_CHANNEL ('display-lobby'), PUSHER_PANEL_UPDATE_EVENT ('panel-update'), dan tipe DisplayPanelKey di lib/constants.ts.
+  - Backend Realtime Service (server/services/realtime.service.ts): fungsi broadcastPanelUpdate(panel) memicu revalidasi cache display Next.js, mengambil data terbaru panel bersangkutan, dan mengirim broadcast Pusher dengan payload { panel, data, updatedAt }.
+  - Integrasi Service Mutasi: seluruh operasi create, update, dan delete di pengumuman.service.ts, kategori.service.ts (mengupdate pengumuman), agenda.service.ts, running-text.service.ts, promo.service.ts, video.service.ts, makro-ekonomi.service.ts, dan setting.service.ts otomatis memicu broadcastPanelUpdate(...).
+  - Endpoint Single Panel (GET /api/display?panel=...): controller dan service display mendukung pengambilan satu panel spesifik jika event payload tidak menyertakan data.
+  - Client Listener (hooks/use-display-data.ts): mendengarkan event 'panel-update', mencocokkan nilai panel, dan hanya memperbarui data panel tersebut di SWR cache tanpa merestart video playback maupun posisi carousel pada panel lainnya.
+  - Server Page (app/(display)/lobby/page.tsx): membaca kredensial Pusher dari environment variable (PUSHER_KEY, PUSHER_CLUSTER, serta fallback NEXT_PUBLIC_*) dan meneruskannya ke DisplayScreen.
+  - Verifikasi: npm run typecheck dan npm run build sukses 100% tanpa error.

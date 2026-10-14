@@ -1,6 +1,6 @@
 import "server-only";
 import { NotFoundError } from "@/server/errors/app-error";
-import { revalidateDisplayCache } from "@/server/services/cache";
+import { broadcastPanelUpdate } from "@/server/services/realtime.service";
 import * as videoModel from "@/server/models/video.model";
 import type {
   CreateVideoInput,
@@ -23,7 +23,7 @@ export async function createVideo(
   data: CreateVideoInput
 ): Promise<videoModel.VideoRow> {
   const created = await videoModel.create(data);
-  revalidateDisplayCache();
+  await broadcastPanelUpdate("video");
   return created;
 }
 
@@ -41,7 +41,7 @@ export async function updateVideo(
     throw new NotFoundError(`Video dengan ID ${id} tidak ditemukan`);
   }
 
-  revalidateDisplayCache();
+  await broadcastPanelUpdate("video");
   return updated;
 }
 
@@ -56,6 +56,6 @@ export async function deleteVideo(id: number): Promise<boolean> {
     throw new NotFoundError(`Video dengan ID ${id} gagal dihapus`);
   }
 
-  revalidateDisplayCache();
+  await broadcastPanelUpdate("video");
   return true;
 }

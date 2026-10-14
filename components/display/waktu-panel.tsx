@@ -55,7 +55,10 @@ function CountdownTiles({ value }: { value: string }) {
     <div className="flex items-start gap-2">
       {parts.map((part, i) => (
         <div key={units[i]} className="flex flex-col items-center gap-1">
-          <span className="min-w-[2.4ch] rounded-md bg-black/35 px-2.5 py-1.5 text-[clamp(1.7rem,2.4vw,3rem)] leading-none font-extrabold tabular-nums ring-1 ring-white/20">
+          <span
+            suppressHydrationWarning
+            className="min-w-[2.4ch] rounded-md bg-black/35 px-2.5 py-1.5 text-[clamp(1.7rem,2.4vw,3rem)] leading-none font-extrabold tabular-nums ring-1 ring-white/20"
+          >
             {part.padStart(2, "0")}
           </span>
           <span className="text-[clamp(0.55rem,0.7vw,0.85rem)] font-medium tracking-widest text-white/70 uppercase">
@@ -137,14 +140,23 @@ export function WaktuPanel({ className }: WaktuPanelProps) {
         className={cn(slideClass, "justify-between")}
       >
         <div className="flex flex-col p-4">
-          <p className="text-[length:var(--fs-title)] leading-tight font-semibold">
+          <p
+            suppressHydrationWarning
+            className="text-[length:var(--fs-title)] leading-tight font-semibold"
+          >
             {clock.day}
           </p>
-          <p className="text-[length:var(--fs-body)] text-[var(--c-muted)]">
+          <p
+            suppressHydrationWarning
+            className="text-[length:var(--fs-body)] text-[var(--c-muted)]"
+          >
             {clock.date}
           </p>
           <div className="mt-1 flex items-baseline gap-2">
-            <span className="text-[length:var(--fs-clock)] leading-none font-bold text-[var(--c-accent)] tabular-nums">
+            <span
+              suppressHydrationWarning
+              className="text-[length:var(--fs-clock)] leading-none font-bold text-[var(--c-accent)] tabular-nums"
+            >
               {clock.time}
             </span>
             <span className="text-[length:var(--fs-body)] font-medium text-[var(--c-muted)]">

@@ -1,6 +1,6 @@
 import "server-only";
 import { NotFoundError } from "@/server/errors/app-error";
-import { revalidateDisplayCache } from "@/server/services/cache";
+import { broadcastPanelUpdate } from "@/server/services/realtime.service";
 import * as runningTextModel from "@/server/models/running-text.model";
 import type {
   CreateRunningTextInput,
@@ -27,7 +27,7 @@ export async function createRunningText(
   data: CreateRunningTextInput
 ): Promise<runningTextModel.RunningTextRow> {
   const created = await runningTextModel.create(data);
-  revalidateDisplayCache();
+  await broadcastPanelUpdate("runningText");
   return created;
 }
 
@@ -45,7 +45,7 @@ export async function updateRunningText(
     throw new NotFoundError(`Running text dengan ID ${id} tidak ditemukan`);
   }
 
-  revalidateDisplayCache();
+  await broadcastPanelUpdate("runningText");
   return updated;
 }
 
@@ -60,6 +60,6 @@ export async function deleteRunningText(id: number): Promise<boolean> {
     throw new NotFoundError(`Running text dengan ID ${id} gagal dihapus`);
   }
 
-  revalidateDisplayCache();
+  await broadcastPanelUpdate("runningText");
   return true;
 }
