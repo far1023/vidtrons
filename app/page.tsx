@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Image from "next/image"
 import { Radio, Sparkles } from "lucide-react"
 
+import { LobbyBackground } from "@/components/display/lobby-background"
 import { Badge } from "@/components/ui/badge"
 import { ScreenSelector } from "@/components/portal/screen-selector"
 
@@ -13,13 +14,14 @@ export const metadata: Metadata = {
 
 export default function Page() {
   return (
-    <main className="relative flex min-h-screen flex-col justify-between overflow-x-hidden bg-radial-[at_top_center] from-emerald-50/70 via-background to-background text-foreground antialiased selection:bg-emerald-100 selection:text-emerald-900">
-      {/* Decorative ambient background accents */}
+    <main className="relative isolate flex min-h-screen flex-col justify-between overflow-x-hidden bg-[#fff9f4] text-[var(--c-text)] antialiased selection:bg-emerald-100 selection:text-emerald-900">
+      {/* Background SVG Gradient dari halaman lobby */}
       <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-0 -z-10 flex transform-gpu justify-center overflow-hidden blur-3xl"
+        className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
+        role="img"
+        aria-label="Lobby background"
       >
-        <div className="aspect-[1108/632] w-[69.25rem] flex-none bg-gradient-to-tr from-emerald-200/40 via-teal-100/30 to-amber-100/20 opacity-60" />
+        <LobbyBackground className="h-full w-full" />
       </div>
 
       {/* Header & Branding */}
@@ -61,8 +63,9 @@ export default function Page() {
             Pilih Layar Informasi
           </h1>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground sm:text-base">
-            Silakan pilih tampilan monitor atau panel operasional yang ingin dibuka. Untuk
-            tampilan videotron di lobi utama, gunakan menu <strong>Layar Informasi Lobby</strong>.
+            Silakan pilih tampilan monitor atau panel operasional yang ingin
+            dibuka. Untuk tampilan videotron di lobi utama, gunakan menu{" "}
+            <strong>Layar Informasi Lobby</strong>.
           </p>
         </div>
 
@@ -75,11 +78,16 @@ export default function Page() {
       {/* Footer */}
       <footer className="border-t border-emerald-950/5 bg-background/60 py-4 text-center text-xs text-muted-foreground">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-4 sm:flex-row sm:px-6">
-          <p>© {new Date().getFullYear()} Bappeda Kota Dumai. Seluruh hak cipta dilindungi.</p>
+          <p>
+            © {new Date().getFullYear()} Bappeda Kota Dumai. Seluruh hak cipta
+            dilindungi.
+          </p>
           <p className="flex items-center gap-1.5">
             <span>Sistem Informasi Layar Videotron Digital</span>
             <span>•</span>
-            <span className="font-medium text-emerald-800 dark:text-emerald-400">Kota Dumai</span>
+            <span className="font-medium text-emerald-800 dark:text-emerald-400">
+              Kota Dumai
+            </span>
           </p>
         </div>
       </footer>

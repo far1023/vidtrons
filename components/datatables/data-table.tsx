@@ -45,6 +45,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { cn } from "@/lib/utils"
 
 export interface DataTableFilterOption {
   label: string
@@ -91,6 +92,7 @@ export interface DataTableProps<
   emptyMessage?: string
   itemNoun?: string
   pageSize?: number
+  className?: string
 
   // Optional children (for modals/dialogs)
   children?: React.ReactNode
@@ -114,6 +116,7 @@ export function DataTable<TData extends Record<string, any>>({
   emptyMessage = "Belum ada data.",
   itemNoun = "data",
   pageSize = 10,
+  className,
   children,
 }: DataTableProps<TData>) {
   const table = useLegacyTable({
@@ -135,7 +138,7 @@ export function DataTable<TData extends Record<string, any>>({
   const refreshDisabled = mounted ? isRefreshing || isLoading : false
 
   return (
-    <div className="space-y-4">
+    <div className={cn("space-y-4 pb-16 md:pb-20", className)}>
       {/* Page Title & Actions Bar */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>

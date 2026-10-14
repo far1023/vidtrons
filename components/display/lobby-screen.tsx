@@ -21,7 +21,11 @@ export function DisplayScreen() {
   return (
     <div className="relative isolate grid h-screen w-screen grid-rows-[var(--rows-screen)] overflow-hidden bg-[#fff9f4] text-[var(--c-text)]">
       {/* Background SVG Gradient from bg.html */}
-      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden" role="img" aria-label="Untitled blend">
+      <div
+        className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
+        role="img"
+        aria-label="Untitled blend"
+      >
         <LobbyBackground className="h-full w-full" />
       </div>
       <HeaderBar
@@ -50,11 +54,11 @@ export function DisplayScreen() {
 
         <section className="grid min-h-0 grid-rows-[var(--rows-right)] gap-[var(--gap)]">
           {/* Card parent abu-abu (kolom ala Jira); isi pengumuman = child */}
-          <div className="flex min-h-0 flex-col rounded-2xl bg-white/45 p-[var(--pad)] ring-1 ring-white/70 shadow-[0_8px_30px_-12px_rgba(6,78,59,0.25)]">
+          <div className="flex min-h-0 flex-col rounded-2xl bg-white/45 p-[var(--pad)] shadow-[0_8px_30px_-12px_rgba(6,78,59,0.25)] ring-1 ring-white/70">
             <PengumumanPanel items={data?.pengumuman} className="flex-1" />
           </div>
           {/* Card parent putih; isi agenda = child */}
-          <div className="flex min-h-0 flex-col rounded-2xl bg-white/80 py-[var(--pad)] ring-1 ring-black/5 shadow-[0_8px_30px_-12px_rgba(6,78,59,0.25)]">
+          <div className="flex min-h-0 flex-col rounded-2xl bg-white/80 py-[var(--pad)] shadow-[0_8px_30px_-12px_rgba(6,78,59,0.25)] ring-1 ring-black/5">
             <AgendaPanel items={data?.agenda} className="flex-1" />
           </div>
         </section>
