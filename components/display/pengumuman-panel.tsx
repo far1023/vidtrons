@@ -58,10 +58,10 @@ export function PengumumanPanel({ items, className }: PengumumanPanelProps) {
 
   return (
     <div className={cn("flex min-h-0 flex-col", className)}>
-      <header className="flex items-center gap-2 px-1 pb-4 text-[length:var(--fs-badge)] font-semibold tracking-wide text-muted-foreground uppercase">
+      <header className="flex items-center gap-2 px-1 pb-4 text-[clamp(0.85rem,1.05vw,1.2rem)] font-bold tracking-wide text-muted-foreground uppercase">
         <span className="truncate">{labels.pengumuman.judul}</span>
         {hasItems && (
-          <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[0.85em] font-bold text-white tabular-nums">
+          <span className="rounded-full bg-emerald-600 px-2.5 py-0.5 text-[0.9em] font-bold text-white tabular-nums">
             {items!.length}
           </span>
         )}
@@ -69,22 +69,22 @@ export function PengumumanPanel({ items, className }: PengumumanPanelProps) {
 
       <Autoscroll className="min-h-0 flex-1">
         {hasItems ? (
-          <div className="flex flex-col gap-2.5 pb-1">
+          <div className="flex flex-col gap-3 pb-1">
             {items!.map((item, index) => {
               const warna = item.kategori?.warna || DEFAULT_COLOR
               const teks = contrastText(warna)
               return (
                 <article
                   key={item.id ?? index}
-                  className="flex flex-col gap-3 rounded-xl bg-white p-3.5 shadow-[0_1px_2px_rgba(16,24,40,0.06),0_6px_16px_-6px_rgba(16,24,40,0.12)] ring-1 ring-black/5"
+                  className="flex flex-col gap-3.5 rounded-xl bg-white p-4 sm:p-4.5 shadow-[0_1px_3px_rgba(16,24,40,0.08),0_8px_20px_-6px_rgba(16,24,40,0.14)] ring-1 ring-black/5"
                 >
-                  <h3 className="text-[length:var(--fs-title)] leading-snug font-semibold tracking-tight text-foreground">
+                  <h3 className="text-[clamp(1.05rem,1.35vw,1.6rem)] leading-snug font-bold tracking-tight text-foreground">
                     {item.judul}
                   </h3>
 
-                  <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center justify-between gap-2 pt-0.5">
                     <span
-                      className="inline-flex max-w-[60%] min-w-0 items-center rounded-full px-2.5 py-0.5 text-[length:var(--fs-badge)] font-semibold"
+                      className="inline-flex max-w-[60%] min-w-0 items-center rounded-full px-3 py-1 text-[clamp(0.8rem,0.95vw,1.15rem)] font-bold"
                       style={{ backgroundColor: warna, color: teks }}
                     >
                       <span className="truncate">
@@ -92,8 +92,8 @@ export function PengumumanPanel({ items, className }: PengumumanPanelProps) {
                       </span>
                     </span>
 
-                    <span className="inline-flex shrink-0 items-center gap-1.5 text-[length:var(--fs-badge)] text-muted-foreground">
-                      <Calendar className="size-3 shrink-0" />
+                    <span className="inline-flex shrink-0 items-center gap-2 text-[clamp(0.8rem,0.95vw,1.15rem)] font-medium text-muted-foreground">
+                      <Calendar className="size-3.5 sm:size-4 shrink-0 text-emerald-700/80" />
                       <span className="tabular-nums">{formatDate(item.tanggal)}</span>
                     </span>
                   </div>

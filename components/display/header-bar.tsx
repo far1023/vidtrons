@@ -36,14 +36,14 @@ export function HeaderBar({
       </div>
 
       {/* Pill status "live" + tanggal */}
-      <div className="flex items-center gap-3 rounded-full bg-white/80 px-5 py-2 shadow-sm ring-1 ring-black/5">
-        <span className="relative flex size-2.5">
+      <div className="flex items-center gap-3.5 rounded-full bg-white/85 px-6 py-2.5 shadow-sm ring-1 ring-black/5">
+        <span className="relative flex size-3">
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500/60" />
-          <span className="relative inline-flex size-2.5 rounded-full bg-emerald-500" />
+          <span className="relative inline-flex size-3 rounded-full bg-emerald-500" />
         </span>
         <span
           suppressHydrationWarning
-          className="text-[length:var(--fs-badge)] font-semibold tracking-wide text-emerald-800 uppercase"
+          className="text-[clamp(1rem,1.35vw,1.65rem)] font-bold tracking-wide text-emerald-900 uppercase"
         >
           {clock.day}, {clock.date}
         </span>
