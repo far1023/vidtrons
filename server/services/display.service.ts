@@ -1,7 +1,7 @@
 import "server-only";
 import { unstable_cache } from "next/cache";
 import { DISPLAY_CACHE_TAG } from "@/lib/constants";
-import { getTodayDateString } from "@/lib/config";
+import { getTodayDateString, getDateOffsetString } from "@/lib/config";
 import * as settingModel from "@/server/models/setting.model";
 import * as runningTextModel from "@/server/models/running-text.model";
 import * as pengumumanModel from "@/server/models/pengumuman.model";
@@ -12,6 +12,7 @@ import * as makroEkonomiModel from "@/server/models/makro-ekonomi.model";
 import { toDisplayResource, type DisplayFeedData } from "@/server/resources/display.resource";
 
 async function fetchRawDisplayFeed(todayDateStr: string): Promise<DisplayFeedData> {
+  const endDateStr = getDateOffsetString(7);
   const [
     settingsMap,
     runningTexts,
@@ -24,7 +25,7 @@ async function fetchRawDisplayFeed(todayDateStr: string): Promise<DisplayFeedDat
     settingModel.getMap(),
     runningTextModel.active(),
     pengumumanModel.activeWithKategori(),
-    agendaModel.today(todayDateStr),
+    agendaModel.upcoming(todayDateStr, endDateStr),
     promoModel.active(),
     videoModel.active(),
     makroEkonomiModel.active(),
@@ -98,7 +99,8 @@ export async function getPanelFeed(panel: string): Promise<unknown> {
     }
     case "agenda": {
       const todayDateStr = getTodayDateString();
-      const list = await agendaModel.today(todayDateStr);
+      const endDateStr = getDateOffsetString(7);
+      const list = await agendaModel.upcoming(todayDateStr, endDateStr);
       return list.map((a) => ({
         id: a.id,
         judul: a.judul,

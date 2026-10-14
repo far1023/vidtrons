@@ -1,5 +1,5 @@
 import "server-only";
-import { eq, and, asc, desc } from "drizzle-orm";
+import { eq, and, asc, desc, gte, lte } from "drizzle-orm";
 import { db } from "@/db";
 import { agenda } from "@/db/schema";
 
@@ -12,6 +12,20 @@ export async function today(dateStr: string) {
     .from(agenda)
     .where(and(eq(agenda.tanggal, dateStr), eq(agenda.isActive, true)))
     .orderBy(asc(agenda.mulai));
+}
+
+export async function upcoming(startDate: string, endDate: string) {
+  return db
+    .select()
+    .from(agenda)
+    .where(
+      and(
+        gte(agenda.tanggal, startDate),
+        lte(agenda.tanggal, endDate),
+        eq(agenda.isActive, true)
+      )
+    )
+    .orderBy(asc(agenda.tanggal), asc(agenda.mulai));
 }
 
 export async function all(): Promise<AgendaRow[]> {

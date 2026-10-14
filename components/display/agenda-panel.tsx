@@ -66,10 +66,10 @@ export function AgendaPanel({ items, className }: AgendaPanelProps) {
               return (
                 <li
                   key={item.id ?? index}
-                  className="grid grid-cols-[4.25rem_1fr] sm:grid-cols-[4.75rem_1fr] items-center gap-3.5 rounded-xl bg-white p-3.5 sm:p-4 shadow-[0_1px_3px_rgba(16,24,40,0.08),0_8px_20px_-6px_rgba(16,24,40,0.14)] ring-1 ring-black/5"
+                  className="grid grid-cols-[4.25rem_1fr] items-start gap-3.5 rounded-xl bg-white p-3.5 shadow-[0_1px_3px_rgba(16,24,40,0.08),0_8px_20px_-6px_rgba(16,24,40,0.14)] ring-1 ring-black/5 sm:grid-cols-[4.75rem_1fr] sm:p-4"
                 >
-                  {/* Blok tanggal: tile gradient emerald */}
-                  <div className="flex flex-col items-center justify-center rounded-xl bg-linear-to-br from-emerald-500 to-teal-600 py-2.5 sm:py-3 leading-none text-white shadow-md shadow-emerald-600/25">
+                  {/* Blok tanggal: tile gradient emerald stick to top */}
+                  <div className="flex w-full shrink-0 self-start flex-col items-center justify-center rounded-xl bg-linear-to-br from-emerald-500 to-teal-600 py-2.5 leading-none text-white shadow-md shadow-emerald-600/25 sm:py-3">
                     <span className="text-[clamp(1.6rem,2vw,2.5rem)] font-black tracking-tight tabular-nums">
                       {day}
                     </span>
@@ -85,7 +85,7 @@ export function AgendaPanel({ items, className }: AgendaPanelProps) {
 
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
                       <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-[clamp(0.8rem,0.95vw,1.15rem)] font-bold text-emerald-800 ring-1 ring-emerald-200">
-                        <Clock className="size-3.5 sm:size-4 shrink-0 text-emerald-600" />
+                        <Clock className="size-3.5 shrink-0 text-emerald-600 sm:size-4" />
                         <span className="tabular-nums">
                           {formatTime(item.mulai)} – {formatTime(item.selesai)}
                         </span>
@@ -93,7 +93,7 @@ export function AgendaPanel({ items, className }: AgendaPanelProps) {
 
                       {item.lokasi ? (
                         <span className="inline-flex min-w-0 items-start gap-1.5 text-[clamp(0.8rem,0.95vw,1.15rem)] font-medium text-muted-foreground">
-                          <MapPin className="mt-0.5 size-3.5 sm:size-4 shrink-0 text-emerald-700/80" />
+                          <MapPin className="mt-0.5 size-3.5 shrink-0 text-emerald-700/80 sm:size-4" />
                           <span className="line-clamp-2">{item.lokasi}</span>
                         </span>
                       ) : null}

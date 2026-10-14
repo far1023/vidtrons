@@ -42,7 +42,7 @@ export const labels = {
   },
   agenda: {
     judul: "Agenda Kegiatan",
-    kosong: "Tidak ada agenda untuk hari ini",
+    kosong: "Tidak ada agenda untuk 7 hari ke depan",
   },
   runningText: {
     placeholder: "Informasi berjalan",

@@ -225,3 +225,10 @@ pm run build lulus; API diuji (buat, duplikat 409, validasi 422, ubah, hapus 204
   - Client Listener (hooks/use-display-data.ts): mendengarkan event 'panel-update', mencocokkan nilai panel, dan hanya memperbarui data panel tersebut di SWR cache tanpa merestart video playback maupun posisi carousel pada panel lainnya.
   - Server Page (app/(display)/lobby/page.tsx): membaca kredensial Pusher dari environment variable (PUSHER_KEY, PUSHER_CLUSTER, serta fallback NEXT_PUBLIC_*) dan meneruskannya ke DisplayScreen.
   - Verifikasi: npm run typecheck dan npm run build sukses 100% tanpa error.
+- Perubahan Rentang Agenda Display (Hari ini + 7 Hari ke Depan):
+  - Menambahkan helper getDateOffsetString(offsetDays) di lib/config.ts untuk menghitung tanggal target dalam timezone DASHBOARD_TIMEZONE.
+  - Menambahkan query upcoming(startDate, endDate) di server/models/agenda.model.ts dengan filter gte(agenda.tanggal, startDate) dan lte(agenda.tanggal, endDate), diurutkan kronologis berdasarkan tanggal asc dan jam mulai asc.
+  - Memperbarui display.service.ts pada fetchRawDisplayFeed dan getPanelFeed('agenda') untuk mengambil agenda dari hari ini sampai 7 hari ke depan.
+  - Memperbarui label labels.agenda.kosong di lib/labels.ts menjadi 'Tidak ada agenda untuk 7 hari ke depan'.
+  - Menambahkan suppressHydrationWarning pada teks jam, hari, tanggal, dan countdown di components/display/waktu-panel.tsx untuk mencegah mismatch hidrasi waktu render server-client.
+  - Verifikasi: npm run typecheck dan npm run build sukses 100% tanpa error.

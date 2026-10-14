@@ -38,6 +38,22 @@ export function getTodayDateString(timezone: string = config.timezone): string {
 }
 
 /**
+ * Returns a date string formatted as YYYY-MM-DD in the configured timezone,
+ * offset by a given number of days from today.
+ */
+export function getDateOffsetString(offsetDays: number, timezone: string = config.timezone): string {
+  const target = new Date();
+  target.setDate(target.getDate() + offsetDays);
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  return formatter.format(target);
+}
+
+/**
  * Returns the current seconds since midnight in the configured timezone.
  */
 export function getSecondsSinceMidnight(date: Date = new Date(), timezone: string = config.timezone): number {
