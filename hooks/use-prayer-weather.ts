@@ -9,9 +9,15 @@ import {
   parsePrayerTimings,
   type PrayerTimeItem,
 } from "@/lib/data-sources";
+import {
+  buildAirQualityUrl,
+  parseAirQuality,
+  type AirQualityData,
+} from "@/lib/air-quality";
 
 const PRAYER_STORAGE_KEY = "bppddmi_prayer_data_cache";
 const WEATHER_STORAGE_KEY = "bppddmi_weather_data_cache";
+const AQI_STORAGE_KEY = "bppddmi_aqi_data_cache";
 
 // Backoff schedule in milliseconds: 30s, 1m, 5m (then remains 5m)
 const BACKOFF_DELAYS = [30_000, 60_000, 300_000];
@@ -32,11 +38,14 @@ export interface WeatherData {
 export function usePrayerWeather() {
   const [prayerData, setPrayerData] = useState<PrayerData | null>(null);
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
+  const [airQuality, setAirQuality] = useState<AirQualityData | null>(null);
 
   const prayerRetryCount = useRef(0);
   const weatherRetryCount = useRef(0);
+  const aqiRetryCount = useRef(0);
   const prayerTimer = useRef<NodeJS.Timeout | null>(null);
   const weatherTimer = useRef<NodeJS.Timeout | null>(null);
+  const aqiTimer = useRef<NodeJS.Timeout | null>(null);
   const isMounted = useRef(true);
 
   // Initialize from localStorage cache on mount
@@ -68,6 +77,16 @@ export function usePrayerWeather() {
       }
     } catch (e) {
       console.warn("Gagal membaca cache cuaca:", e);
+    }
+
+    try {
+      const storedAqi = localStorage.getItem(AQI_STORAGE_KEY);
+      if (storedAqi) {
+        const parsed = JSON.parse(storedAqi);
+        if (parsed && typeof parsed.aqi === "number") setAirQuality(parsed);
+      }
+    } catch (e) {
+      console.warn("Gagal membaca cache kualitas udara:", e);
     }
 
     // Helper: convert YYYY-MM-DD to DD-MM-YYYY
@@ -163,15 +182,48 @@ export function usePrayerWeather() {
       }
     }
 
+    // 3. Fetch Air Quality
+    async function fetchAirQuality() {
+      try {
+        const res = await fetch(buildAirQualityUrl());
+        if (!res.ok) throw new Error(`Air quality HTTP ${res.status}`);
+        const json = await res.json();
+        const parsed = parseAirQuality(json?.current);
+        if (!parsed) throw new Error("Format air quality tidak valid");
+
+        if (isMounted.current) {
+          setAirQuality(parsed);
+          try {
+            localStorage.setItem(AQI_STORAGE_KEY, JSON.stringify(parsed));
+          } catch (err) {
+            console.warn("Gagal menyimpan cache kualitas udara:", err);
+          }
+        }
+      } catch (err) {
+        console.warn("Fetch kualitas udara gagal, menjadwalkan retry:", err);
+        const delay =
+          BACKOFF_DELAYS[
+            Math.min(aqiRetryCount.current, BACKOFF_DELAYS.length - 1)
+          ];
+        aqiRetryCount.current += 1;
+        if (isMounted.current) {
+          aqiTimer.current = setTimeout(fetchAirQuality, delay);
+        }
+      }
+    }
+
     // Trigger parallel initial fetches
     fetchPrayer();
     fetchWeather();
+    fetchAirQuality();
 
     function handleOnline() {
       prayerRetryCount.current = 0;
       weatherRetryCount.current = 0;
+      aqiRetryCount.current = 0;
       fetchPrayer();
       fetchWeather();
+      fetchAirQuality();
     }
     window.addEventListener("online", handleOnline);
 
@@ -180,11 +232,13 @@ export function usePrayerWeather() {
       window.removeEventListener("online", handleOnline);
       if (prayerTimer.current) clearTimeout(prayerTimer.current);
       if (weatherTimer.current) clearTimeout(weatherTimer.current);
+      if (aqiTimer.current) clearTimeout(aqiTimer.current);
     };
   }, []);
 
   return {
     prayerData,
     weatherData,
+    airQuality,
   };
 }

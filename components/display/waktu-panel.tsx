@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { Hourglass, Megaphone } from "lucide-react"
+import { Fragment, useEffect, useState, type CSSProperties } from "react"
+import { Droplets, Hourglass, Megaphone, Wind } from "lucide-react"
 import { Panel } from "@/components/display/panel"
 import { useClock } from "@/hooks/use-clock"
 import { usePrayerWeather } from "@/hooks/use-prayer-weather"
@@ -27,6 +27,81 @@ export function getTemperatureColor(temp: number): string {
   if (temp >= 32) return "text-orange-600"
   if (temp >= 29) return "text-amber-600"
   return "text-[var(--c-text)]"
+}
+
+/**
+ * Ikon wajah untuk kartu kualitas udara:
+ * - AQI <= 100: wajah tersenyum
+ * - AQI > 100: wajah memakai masker
+ */
+function AirQualityFace({
+  unhealthy,
+  className,
+}: {
+  unhealthy: boolean
+  className?: string
+}) {
+  return (
+    <svg
+      viewBox="0 0 48 48"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className={className}
+    >
+      <circle cx="24" cy="24" r="19" />
+      <path d="M9 20c8 0 14-4 17-9 3 4 8 8 13 9" />
+      <path d="M17 22v1.5M31 22v1.5" />
+      {unhealthy ? (
+        <>
+          <path d="M13 28h22v3c0 5-5 9-11 9s-11-4-11-9z" />
+          <path d="M17 32h14M17 35h14" />
+        </>
+      ) : (
+        <path d="M17 29c2 3 4 4 7 4s5-1 7-4" />
+      )}
+    </svg>
+  )
+}
+
+/** Batas atas tiap kategori US AQI (Good ... Hazardous). */
+const AQI_UPPER = [50, 100, 150, 200, 300, 500]
+
+/** Posisi penanda pada skala AQI (6 segmen sama lebar), hasil 0-100. */
+function aqiScalePercent(aqi: number): number {
+  let lower = 0
+  for (let i = 0; i < AQI_UPPER.length; i++) {
+    const upper = AQI_UPPER[i]
+    if (aqi <= upper) {
+      const frac = Math.max(0, (aqi - lower) / (upper - lower))
+      return ((i + frac) / AQI_UPPER.length) * 100
+    }
+    lower = upper
+  }
+  return 100
+}
+
+/** Jam dengan titik dua berkedip. Jika format tak dikenali, tampil apa adanya. */
+function ClockDigits({ value }: { value: string }) {
+  const parts = value.split(/[:.]/)
+  if (parts.length < 2) return <>{value}</>
+  return (
+    <>
+      {parts.map((part, i) => (
+        <Fragment key={i}>
+          {i > 0 ? (
+            <span className="mx-[0.03em] inline-block -translate-y-[0.05em] animate-[colon-blink_1s_ease-in-out_infinite] motion-reduce:animate-none">
+              :
+            </span>
+          ) : null}
+          {part}
+        </Fragment>
+      ))}
+    </>
+  )
 }
 
 /**
@@ -76,7 +151,7 @@ export type WaktuPanelProps = {
 
 export function WaktuPanel({ className }: WaktuPanelProps) {
   const clock = useClock()
-  const { prayerData, weatherData } = usePrayerWeather()
+  const { prayerData, weatherData, airQuality } = usePrayerWeather()
   const prayerMode = usePrayerMode(prayerData?.timings, clock.secondsNow)
 
   // State yang bergantung pada waktu sekarang (countdown, sholat berikutnya, mode azan)
@@ -122,6 +197,28 @@ export function WaktuPanel({ className }: WaktuPanelProps) {
       : null
   const WeatherIcon = weatherInfo?.icon
 
+  // Field tambahan (opsional): tambahkan di usePrayerWeather agar tampil.
+  const extraWeather = weatherData as
+    | (NonNullable<typeof weatherData> & {
+        windSpeed?: number
+        humidity?: number
+      })
+    | null
+    | undefined
+  const extraAir = airQuality as
+    (NonNullable<typeof airQuality> & { pm25?: number }) | null | undefined
+  const windSpeed = extraWeather?.windSpeed
+  const humidity = extraWeather?.humidity
+  const pm25 = extraAir?.pm25
+
+  // Glow mengikuti warna kategori AQI (color-mix mendukung hex/rgb/hsl)
+  const glowStyle: CSSProperties | undefined = airQuality
+    ? ({
+        "--glow": `color-mix(in srgb, ${airQuality.color} 85%, transparent)`,
+        "--glow-soft": `color-mix(in srgb, ${airQuality.color} 45%, transparent)`,
+      } as CSSProperties)
+    : undefined
+
   return (
     <Panel
       className={cn(
@@ -139,55 +236,139 @@ export function WaktuPanel({ className }: WaktuPanelProps) {
         data-active={String(currentSlide === "jam-cuaca")}
         className={cn(slideClass, "justify-between")}
       >
-        <div className="flex flex-col p-4">
-          <p
-            suppressHydrationWarning
-            className="text-[length:var(--fs-title)] leading-tight font-semibold"
-          >
-            {clock.day}
-          </p>
-          <p
-            suppressHydrationWarning
-            className="text-[length:var(--fs-body)] text-[var(--c-muted)]"
-          >
-            {clock.date}
-          </p>
-          <div className="mt-1 flex items-baseline gap-2">
+        <style>{`
+          @keyframes colon-blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.2; }
+          }
+          @keyframes aqi-glow {
+            0%, 100% {
+              box-shadow: 0 0 8px 1px var(--glow-soft), 0 0 18px 3px var(--glow-soft);
+            }
+            50% {
+              box-shadow: 0 0 14px 3px var(--glow), 0 0 28px 7px var(--glow-soft);
+            }
+          }
+        `}</style>
+
+        {/* Header: hari, tanggal, cuaca + jam besar */}
+        <div className="flex flex-col gap-2.5 p-4">
+          <div className="flex items-start justify-between gap-3">
+            {weatherData && WeatherIcon && weatherInfo ? (
+              <div
+                title={weatherInfo.label}
+                aria-label={weatherInfo.label}
+                className="flex shrink-0 items-center gap-2"
+              >
+                <WeatherIcon className="size-[calc(var(--icon))] shrink-0" />
+                <div className="flex flex-col leading-none">
+                  <span
+                    className={cn(
+                      "text-[length:var(--fs-title)] font-bold tabular-nums",
+                      getTemperatureColor(weatherData.temperature)
+                    )}
+                  >
+                    {weatherData.temperature}°C
+                  </span>
+                  <span className="mt-1 text-[length:var(--fs-badge)] text-[var(--c-muted)]">
+                    {weatherInfo.label}
+                  </span>
+                </div>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="flex items-baseline gap-2">
             <span
               suppressHydrationWarning
-              className="text-[length:var(--fs-clock)] leading-none font-bold text-[var(--c-accent)] tabular-nums"
+              className="text-[length:var(--fs-clock)] leading-none font-bold text-[var(--c-accent)] tabular-nums drop-shadow-sm"
             >
-              {clock.time}
+              <ClockDigits value={clock.time} />
             </span>
-            <span className="text-[length:var(--fs-body)] font-medium text-[var(--c-muted)]">
+            <span className="rounded-md bg-[var(--c-accent)]/15 px-1.5 py-0.5 text-[length:var(--fs-badge)] font-semibold text-[var(--c-accent)]">
               {config.timezoneLabel}
             </span>
           </div>
+
+          {windSpeed != null || humidity != null ? (
+            <div className="flex flex-wrap gap-2 text-[length:var(--fs-badge)] text-[var(--c-text)]">
+              {windSpeed != null ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/70 px-2.5 py-1 ring-1 ring-white/80">
+                  <Wind className="size-[1.2em] shrink-0 text-slate-500" />
+                  <span className="tabular-nums">
+                    {Math.round(windSpeed)} km/h
+                  </span>
+                </span>
+              ) : null}
+              {humidity != null ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/70 px-2.5 py-1 ring-1 ring-white/80">
+                  <Droplets className="size-[1.2em] shrink-0 text-sky-500" />
+                  <span className="tabular-nums">{Math.round(humidity)} %</span>
+                </span>
+              ) : null}
+            </div>
+          ) : null}
         </div>
 
-        {/* Info Cuaca dalam slide yang sama: stick ke bottom */}
-        {weatherData && WeatherIcon && weatherInfo ? (
-          <div className="mt-auto flex items-center justify-between rounded-xl bg-white/65 px-3 py-2 ring-1 ring-white/70">
-            <div className="flex items-center gap-2.5">
-              <WeatherIcon className="size-[var(--icon)] shrink-0" />
-              <div className="flex flex-col">
-                <span
-                  className={cn(
-                    "text-[length:var(--fs-title)] leading-tight font-bold tabular-nums",
-                    getTemperatureColor(weatherData.temperature)
-                  )}
-                >
-                  {weatherData.temperature}°C
+        {/* Kartu Kualitas Udara dengan glow sesuai kategori: stick ke bottom */}
+        {airQuality ? (
+          <div
+            style={glowStyle}
+            className="mt-auto animate-[aqi-glow_2.8s_ease-in-out_infinite] overflow-hidden rounded-2xl bg-white ring-1 ring-black/5 motion-reduce:animate-none motion-reduce:shadow-[0_0_18px_4px_var(--glow-soft)]"
+          >
+            <div
+              className="flex flex-col gap-2 px-3 pt-3 pb-3"
+              style={{
+                backgroundColor: airQuality.color,
+                color: airQuality.textColor ?? "#0F0F0F",
+              }}
+            >
+              <div className="flex items-center gap-3">
+                {/* Kotak angka AQI */}
+                <div className="flex shrink-0 flex-col items-center rounded-lg bg-black/15 px-2.5 py-1.5 leading-none">
+                  <span className="text-[length:calc(var(--fs-title)*0.85)] font-bold tabular-nums">
+                    {airQuality.aqi}
+                  </span>
+                  <span className="mt-1 text-[length:calc(var(--fs-badge)*0.85)] font-medium whitespace-nowrap">
+                    AQI* US
+                  </span>
+                </div>
+
+                {/* Kategori */}
+                <span className="min-w-0 flex-1 text-[length:calc(var(--fs-title)*0.85)] leading-tight font-medium">
+                  {airQuality.category}
                 </span>
-                <span className="text-[length:var(--fs-badge)] leading-tight text-[var(--c-muted)]">
-                  {weatherInfo.label}
-                </span>
+
+                {/* Ikon wajah */}
+                <AirQualityFace
+                  unhealthy={airQuality.aqi > 100}
+                  className="size-[calc(var(--icon)*1.6)] shrink-0 opacity-80"
+                />
               </div>
-            </div>
-            <div className="text-right">
-              <span className="text-[length:var(--fs-badge)] font-medium text-[var(--c-muted)]">
-                {weatherData.locationName}
-              </span>
+
+              {/* Skala AQI dengan penanda posisi */}
+              <div
+                className="relative my-1 h-1.5 rounded-full"
+                style={{
+                  background:
+                    "linear-gradient(to right,#a8e05f 0 16.66%,#fdd64b 16.66% 33.33%,#ff9b57 33.33% 50%,#fe6a69 50% 66.66%,#a97abc 66.66% 83.33%,#a87383 83.33% 100%)",
+                }}
+              >
+                <span
+                  className="absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow ring-2 ring-black/50"
+                  style={{ left: `${aqiScalePercent(airQuality.aqi)}%` }}
+                />
+              </div>
+
+              {/* Polutan utama & konsentrasi */}
+              <div className="flex items-center justify-between gap-2 text-[length:calc(var(--fs-body)*0.85)]">
+                <span>Polutan utama: {airQuality.mainPollutant}</span>
+                {pm25 != null ? (
+                  <span className="font-medium tabular-nums">
+                    {Math.round(pm25)} µg/m<sup>3</sup>
+                  </span>
+                ) : null}
+              </div>
             </div>
           </div>
         ) : null}
