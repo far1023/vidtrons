@@ -12,6 +12,8 @@ import { VideoPanel } from "@/components/display/video-panel"
 import { WaktuPanel } from "@/components/display/waktu-panel"
 import { useDisplayData } from "@/hooks/use-display-data"
 import { useMidnightRefresh } from "@/hooks/use-midnight-refresh"
+import { usePrayerWeather } from "@/hooks/use-prayer-weather"
+import { buildAirQualityAdvisory } from "@/lib/air-quality"
 
 interface DisplayScreenProps {
   pusherKey?: string;
@@ -22,6 +24,7 @@ interface DisplayScreenProps {
 export function DisplayScreen({ pusherKey, pusherCluster }: DisplayScreenProps = {}) {
   useMidnightRefresh()
   const { data } = useDisplayData({ pusherKey, pusherCluster })
+  const prayerWeather = usePrayerWeather()
 
   return (
     <div className="relative isolate grid h-screen w-screen grid-rows-[var(--rows-screen)] overflow-hidden bg-[#fff9f4] text-[var(--c-text)]">
@@ -41,7 +44,7 @@ export function DisplayScreen({ pusherKey, pusherCluster }: DisplayScreenProps =
 
       <main className="relative isolate z-0 grid min-h-0 grid-cols-[var(--cols-main)] gap-[var(--gap)] px-[var(--pad-x)] py-[var(--gap)]">
         <section className="grid min-h-0 grid-rows-[var(--rows-left)] gap-[var(--gap)]">
-          <WaktuPanel />
+          <WaktuPanel prayerWeather={prayerWeather} />
           <div className="flex min-h-0 flex-col gap-[var(--gap)]">
             <PromoPanel items={data?.promo} />
             <BrandingLogos />
@@ -69,7 +72,10 @@ export function DisplayScreen({ pusherKey, pusherCluster }: DisplayScreenProps =
         </section>
       </main>
 
-      <RunningText items={data?.runningText} />
+      <RunningText
+        items={data?.runningText}
+        extraMessages={[buildAirQualityAdvisory(prayerWeather.airQuality)]}
+      />
     </div>
   )
 }

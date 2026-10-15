@@ -82,3 +82,37 @@ export function parseAirQuality(
     whoTimes: +(pm25 / WHO_PM25_ANNUAL).toFixed(1),
   }
 }
+
+/** Builds the running-text advisory from AQI and PM2.5. Returns null if data is incomplete. */
+export function buildAirQualityAdvisory(
+  aq: Partial<AirQualityData> | null | undefined
+): string | null {
+  if (!aq || typeof aq.aqi !== "number") return null
+
+  const ratio =
+    typeof aq.whoTimes === "number"
+      ? aq.whoTimes
+      : typeof aq.pm25 === "number"
+        ? +(aq.pm25 / WHO_PM25_ANNUAL).toFixed(1)
+        : null
+  const fact =
+    ratio !== null
+      ? `Konsentrasi PM2.5 saat ini ${ratio} kali nilai panduan PM2.5 tahunan WHO. `
+      : ""
+  const head = `Kualitas udara ${aq.category ?? ""} (AQI ${aq.aqi}). `
+
+  let advice: string
+  if (aq.aqi <= 50) {
+    advice = "Udara bersih, aman untuk beraktivitas di luar ruangan."
+  } else if (aq.aqi <= 100) {
+    advice =
+      "Kelompok sensitif sebaiknya mengurangi aktivitas luar ruangan yang berkepanjangan."
+  } else if (aq.aqi <= 150) {
+    advice =
+      "Kelompok sensitif hindari aktivitas luar ruangan dan gunakan masker bila perlu."
+  } else {
+    advice =
+      "Hindari aktivitas luar ruangan, kurangi udara luar masuk ruangan, dan gunakan masker."
+  }
+  return `${head}${fact}${advice}`
+}

@@ -147,11 +147,13 @@ function CountdownTiles({ value }: { value: string }) {
 
 export type WaktuPanelProps = {
   className?: string
+  /** Data dari usePrayerWeather (dipanggil sekali di DisplayScreen) */
+  prayerWeather: ReturnType<typeof usePrayerWeather>
 }
 
-export function WaktuPanel({ className }: WaktuPanelProps) {
+export function WaktuPanel({ className, prayerWeather }: WaktuPanelProps) {
   const clock = useClock()
-  const { prayerData, weatherData, airQuality } = usePrayerWeather()
+  const { prayerData, weatherData, airQuality } = prayerWeather
   const prayerMode = usePrayerMode(prayerData?.timings, clock.secondsNow)
 
   // State yang bergantung pada waktu sekarang (countdown, sholat berikutnya, mode azan)

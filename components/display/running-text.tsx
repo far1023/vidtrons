@@ -7,16 +7,20 @@ export type RunningTextProps = {
   className?: string
   /** Kecepatan gerak teks (px per detik) */
   speed?: number
+  /** Pesan tambahan otomatis (mis. info kualitas udara), ditambahkan setelah item */
+  extraMessages?: (string | null | undefined)[]
 }
 
 export function RunningText({
   items,
   className,
   speed = 90,
+  extraMessages,
 }: RunningTextProps) {
-  const messages = items?.length
-    ? items.map((item) => item.isi)
-    : [labels.runningText.placeholder]
+  const base = items?.length ? items.map((item) => item.isi) : []
+  const extras = (extraMessages ?? []).filter((m): m is string => Boolean(m))
+  const messages = [...base, ...extras]
+  if (!messages.length) messages.push(labels.runningText.placeholder)
 
   return (
     <div
