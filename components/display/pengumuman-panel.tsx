@@ -76,15 +76,15 @@ export function PengumumanPanel({ items, className }: PengumumanPanelProps) {
               return (
                 <article
                   key={item.id ?? index}
-                  className="flex flex-col gap-3.5 rounded-xl bg-white p-4 sm:p-4.5 shadow-[0_1px_3px_rgba(16,24,40,0.08),0_8px_20px_-6px_rgba(16,24,40,0.14)] ring-1 ring-black/5"
+                  className="flex flex-col gap-3.5 rounded-xl bg-white p-4 shadow-[0_1px_3px_rgba(16,24,40,0.08),0_8px_20px_-6px_rgba(16,24,40,0.14)] ring-1 ring-black/5 sm:p-4.5"
                 >
-                  <h3 className="text-[clamp(1.05rem,1.35vw,1.6rem)] leading-snug font-bold tracking-tight text-foreground">
+                  <h3 className="min-w-0 text-[clamp(1.05rem,1.35vw,1.4rem)] leading-snug tracking-tight [overflow-wrap:anywhere] break-words text-foreground">
                     {item.judul}
                   </h3>
 
                   <div className="flex items-center justify-between gap-2 pt-0.5">
                     <span
-                      className="inline-flex max-w-[60%] min-w-0 items-center rounded-full px-3 py-1 text-[clamp(0.8rem,0.95vw,1.15rem)] font-bold"
+                      className="inline-flex max-w-[60%] min-w-0 items-center rounded-full px-3 py-1 text-[clamp(0.8rem,0.95vw,1rem)] font-bold"
                       style={{ backgroundColor: warna, color: teks }}
                     >
                       <span className="truncate">
@@ -93,8 +93,10 @@ export function PengumumanPanel({ items, className }: PengumumanPanelProps) {
                     </span>
 
                     <span className="inline-flex shrink-0 items-center gap-2 text-[clamp(0.8rem,0.95vw,1.15rem)] font-medium text-muted-foreground">
-                      <Calendar className="size-3.5 sm:size-4 shrink-0 text-emerald-700/80" />
-                      <span className="tabular-nums">{formatDate(item.tanggal)}</span>
+                      <Calendar className="size-3.5 shrink-0 text-emerald-700/80 sm:size-4" />
+                      <span className="tabular-nums">
+                        {formatDate(item.tanggal)}
+                      </span>
                     </span>
                   </div>
                 </article>

@@ -22,14 +22,14 @@ export function RunningText({
     <div
       className={cn(
         "relative isolate z-10 flex min-h-0 items-stretch overflow-hidden whitespace-nowrap select-none",
-        "bg-linear-to-r from-emerald-950 via-emerald-900 to-teal-900 text-[clamp(1.05rem,1.35vw,1.65rem)] font-medium text-white",
+        "bg-linear-to-r from-emerald-950 via-emerald-900 to-teal-900 text-[clamp(1.05rem,1.35vw,1.4rem)] font-medium text-white",
         className
       )}
       style={{ contain: "paint" }}
     >
       {/* Label tetap di kiri */}
-      <div className="relative z-10 flex shrink-0 items-center gap-2.5 bg-emerald-500 px-5 sm:px-7 text-[clamp(0.9rem,1.1vw,1.35rem)] font-black tracking-widest uppercase shadow-[8px_0_16px_-4px_rgba(0,0,0,0.35)]">
-        <span className="size-2.5 sm:size-3 animate-pulse rounded-full bg-white" />
+      <div className="relative z-10 flex shrink-0 items-center gap-2.5 bg-emerald-500 px-5 text-[clamp(0.9rem,1.1vw,1.35rem)] font-black tracking-widest uppercase shadow-[8px_0_16px_-4px_rgba(0,0,0,0.35)] sm:px-7">
+        <span className="size-2.5 animate-pulse rounded-full bg-white sm:size-3" />
         Info
       </div>
 
@@ -41,7 +41,7 @@ export function RunningText({
         {messages.map((isi, index) => (
           <span key={index} className="flex shrink-0 items-center">
             <span>{isi}</span>
-            <span className="mx-[var(--pad-x)] text-emerald-300 font-bold text-[1.1em]">
+            <span className="mx-[var(--pad-x)] text-[1.1em] font-bold text-emerald-300">
               {labels.runningText.pemisah}
             </span>
           </span>

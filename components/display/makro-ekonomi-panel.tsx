@@ -156,7 +156,7 @@ export function MakroEkonomiPanel({
           <span className="size-1.5 shrink-0 animate-pulse rounded-full bg-emerald-500" />
           <p className="line-clamp-1 text-sm font-medium tracking-wide text-emerald-900/80">
             {deskripsi ||
-              "Data Indikator Utama Pembangunan Kota Dumai • Sumber Resmi BPS & Bappeda Kota Dumai • Pindai QR di samping untuk rincian data"}
+              "Data Indikator Utama Pembangunan Kota Dumai • Sumber Resmi BPS Kota Dumai"}
           </p>
         </div>
       </div>
@@ -181,7 +181,7 @@ export function MakroEkonomiPanel({
           />
         ) : (
           <div className="flex h-full w-full flex-col items-center justify-center rounded-xl bg-emerald-50/70 p-2 text-center">
-            <QrCode className="size-8 text-emerald-700 animate-pulse" />
+            <QrCode className="size-8 animate-pulse text-emerald-700" />
             <span className="mt-1 line-clamp-1 text-xs font-bold text-emerald-900">
               {labelText}
             </span>
@@ -222,10 +222,10 @@ function IndicatorItem({ item }: { item: MakroEkonomiItem }) {
     <div className="flex shrink-0 items-center">
       <div className="flex flex-col gap-1 px-6 whitespace-nowrap sm:px-8">
         <div className="flex items-baseline gap-2">
-          <span className="text-xs font-semibold text-emerald-900/80 sm:text-sm md:text-base">
+          <span className="text-[clamp(1.05rem,1.35vw,1.2rem)] font-semibold text-emerald-900/80">
             {item.judul}
           </span>
-          <span className="text-xs font-medium text-emerald-900/45 sm:text-sm">
+          <span className="text-[clamp(1.05rem,1.35vw,1.3rem)] font-medium text-emerald-900/45">
             {item.tahun}
           </span>
         </div>
@@ -235,7 +235,7 @@ function IndicatorItem({ item }: { item: MakroEkonomiItem }) {
             <span className="text-3xl leading-none font-black tracking-tight text-emerald-950 tabular-nums sm:text-4xl md:text-5xl">
               {item.nilai}
             </span>
-            <span className="text-sm font-bold text-emerald-800/70 sm:text-base md:text-lg">
+            <span className="text-[clamp(1.05rem,1.35vw,1.4rem)] font-bold text-emerald-800/70">
               {item.satuan}
             </span>
           </div>
