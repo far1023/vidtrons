@@ -22,6 +22,9 @@ const AQI_STORAGE_KEY = "bppddmi_aqi_data_cache";
 // Backoff schedule in milliseconds: 30s, 1m, 5m (then remains 5m)
 const BACKOFF_DELAYS = [30_000, 60_000, 300_000];
 
+// Weather and air quality are refreshed every hour in the background
+const REFRESH_INTERVAL_MS = 60 * 60 * 1000;
+
 export interface PrayerData {
   date: string;
   timings: PrayerTimeItem[];
@@ -165,6 +168,11 @@ export function usePrayerWeather() {
               console.warn("Gagal menyimpan cache cuaca:", err);
             }
           }
+          weatherRetryCount.current = 0;
+          if (isMounted.current) {
+            if (weatherTimer.current) clearTimeout(weatherTimer.current);
+            weatherTimer.current = setTimeout(fetchWeather, REFRESH_INTERVAL_MS);
+          }
           return;
         }
         throw new Error("Format current_weather Open-Meteo tidak valid");
@@ -198,6 +206,9 @@ export function usePrayerWeather() {
           } catch (err) {
             console.warn("Gagal menyimpan cache kualitas udara:", err);
           }
+          aqiRetryCount.current = 0;
+          if (aqiTimer.current) clearTimeout(aqiTimer.current);
+          aqiTimer.current = setTimeout(fetchAirQuality, REFRESH_INTERVAL_MS);
         }
       } catch (err) {
         console.warn("Fetch kualitas udara gagal, menjadwalkan retry:", err);
@@ -221,6 +232,8 @@ export function usePrayerWeather() {
       prayerRetryCount.current = 0;
       weatherRetryCount.current = 0;
       aqiRetryCount.current = 0;
+      if (weatherTimer.current) clearTimeout(weatherTimer.current);
+      if (aqiTimer.current) clearTimeout(aqiTimer.current);
       fetchPrayer();
       fetchWeather();
       fetchAirQuality();
