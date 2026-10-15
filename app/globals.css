@@ -105,7 +105,7 @@
   --icon: clamp(1rem, 1.5vw, 2rem);
 
   /* Typography */
-  --fs-clock: clamp(2rem, 3.5vw, 4.5rem);
+  --fs-clock: clamp(2rem, 3.5vw, 3.5rem);
   --fs-title: clamp(0.75rem, 1vw, 1.25rem);
   --fs-body: clamp(0.65rem, 0.8vw, 1rem);
   --fs-badge: clamp(0.6rem, 0.7vw, 0.9rem);
