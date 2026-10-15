@@ -38,7 +38,9 @@ export function AgendaTable() {
   const [isEditOpen, setIsEditOpen] = React.useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = React.useState(false)
   const [itemToEdit, setItemToEdit] = React.useState<AgendaItem | null>(null)
-  const [itemToDelete, setItemToDelete] = React.useState<AgendaItem | null>(null)
+  const [itemToDelete, setItemToDelete] = React.useState<AgendaItem | null>(
+    null
+  )
 
   // Fetch API
   const fetchData = React.useCallback(async (silent = false) => {
@@ -102,12 +104,10 @@ export function AgendaTable() {
         cell: (info) => {
           const row = info.row.original
           return (
-            <div className="space-y-1 max-w-md">
-              <p className="font-medium text-foreground line-clamp-1">
-                {row.judul}
-              </p>
+            <div className="max-w-2xl min-w-[16rem] space-y-1 break-words whitespace-normal">
+              <p className="font-medium text-foreground">{row.judul}</p>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1 text-emerald-600 font-medium">
+                <span className="flex items-center gap-1 font-medium text-emerald-600">
                   <Calendar className="size-3.5" />
                   {formatDateIndo(row.tanggal)}
                 </span>
@@ -170,7 +170,8 @@ export function AgendaTable() {
           {
             key: "status",
             value: statusFilter,
-            onChange: (val) => setStatusFilter(val as "all" | "active" | "inactive"),
+            onChange: (val) =>
+              setStatusFilter(val as "all" | "active" | "inactive"),
             placeholder: "Pilih status",
             options: STATUS_FILTER_OPTIONS,
           },

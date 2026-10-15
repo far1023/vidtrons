@@ -22,6 +22,7 @@ import {
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -45,7 +46,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { cn } from "@/lib/utils"
 
 export interface DataTableFilterOption {
   label: string
@@ -283,7 +283,13 @@ export function DataTable<TData extends Record<string, any>>({
                         { className?: string } | undefined
                     )?.className
                     return (
-                      <TableCell key={cell.id} className={metaClass}>
+                      <TableCell
+                        key={cell.id}
+                        className={cn(
+                          "break-words whitespace-normal [overflow-wrap:anywhere]",
+                          metaClass
+                        )}
+                      >
                         {flexRender(
                           cell.column.columnDef.cell,
                           cell.getContext()

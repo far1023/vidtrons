@@ -104,18 +104,18 @@ export function VideoTable() {
                 <Film className="size-5 text-muted-foreground/70" />
               </div>
               <div className="space-y-0.5 min-w-0 max-w-md">
-                <p className="font-medium text-foreground truncate">
+                <p className="font-medium text-foreground">
                   {row.judul}
                 </p>
-                <div className="flex items-center gap-1 text-[11px] text-muted-foreground truncate">
+                <div className="flex items-start gap-1 text-[11px] text-muted-foreground">
                   <a
                     href={row.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="hover:underline flex items-center gap-1 text-primary truncate"
+                    className="hover:underline flex items-start gap-1 text-primary"
                     title={row.url}
                   >
-                    <span className="truncate">{row.url}</span>
+                    <span>{row.url}</span>
                     <ExternalLink className="size-3 shrink-0" />
                   </a>
                 </div>

@@ -135,7 +135,7 @@ export function PengumumanTable() {
           const row = info.row.original
           return (
             <div className="space-y-0.5 max-w-md">
-              <p className="font-medium text-foreground line-clamp-2">
+              <p className="font-medium text-foreground">
                 {row.judul}
               </p>
               {row.tanggal && (

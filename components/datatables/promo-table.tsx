@@ -113,10 +113,10 @@ export function PromoTable() {
                 )}
               </div>
               <div className="space-y-0.5 min-w-0 max-w-md">
-                <p className="font-medium text-foreground truncate">
+                <p className="font-medium text-foreground">
                   {row.judul}
                 </p>
-                <p className="text-xs text-muted-foreground truncate">
+                <p className="text-xs text-muted-foreground">
                   {row.gambarUrl}
                 </p>
               </div>

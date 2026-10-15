@@ -98,7 +98,7 @@ export function RunningTextsTable() {
         header: () => <div className="font-semibold">Teks Berjalan</div>,
         cell: (info) => (
           <div className="max-w-md font-medium text-foreground">
-            <p className="line-clamp-2">{info.getValue() as string}</p>
+            <p>{info.getValue() as string}</p>
           </div>
         ),
       },
