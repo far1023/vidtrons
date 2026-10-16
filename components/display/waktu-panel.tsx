@@ -283,7 +283,7 @@ export function WaktuPanel({ className, prayerWeather }: WaktuPanelProps) {
           <div className="flex items-baseline gap-2">
             <span
               suppressHydrationWarning
-              className="text-[length:var(--fs-clock)] leading-none font-bold text-[var(--c-accent)] tabular-nums drop-shadow-sm"
+              className="text-[length:calc(var(--fs-title)*2.75)] leading-none font-bold text-[var(--c-accent)] tabular-nums drop-shadow-sm"
             >
               <ClockDigits value={clock.time} />
             </span>
@@ -328,7 +328,7 @@ export function WaktuPanel({ className, prayerWeather }: WaktuPanelProps) {
               <div className="flex items-center gap-3">
                 {/* Kotak angka AQI */}
                 <div className="flex shrink-0 flex-col items-center rounded-lg bg-black/15 px-2.5 py-1.5 leading-none">
-                  <span className="text-[length:calc(var(--fs-title)*0.85)] font-bold tabular-nums">
+                  <span className="text-[length:calc(var(--fs-title)*1.1)] font-bold tabular-nums">
                     {airQuality.aqi}
                   </span>
                   <span className="mt-1 text-[length:calc(var(--fs-badge)*0.85)] font-medium whitespace-nowrap">
