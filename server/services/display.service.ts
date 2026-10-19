@@ -129,12 +129,21 @@ export async function getPanelFeed(panel: string): Promise<unknown> {
     }
     case "video": {
       const list = await videoModel.active();
-      return list.map((v) => ({
-        id: v.id,
-        judul: v.judul,
-        url: v.url,
-        urutan: v.urutan,
-      }));
+      return list.map((v) => {
+        let finalUrl = v.url;
+        if (v.url.includes("kencana.basic.box.cloudeka.id/far1023s-bucket-ctkpuc/")) {
+          const key = v.url.split("/far1023s-bucket-ctkpuc/")[1];
+          if (key) {
+            finalUrl = `/api/display/video/stream?key=${encodeURIComponent(key)}`;
+          }
+        }
+        return {
+          id: v.id,
+          judul: v.judul,
+          url: finalUrl,
+          urutan: v.urutan,
+        };
+      });
     }
     case "makroEkonomi":
     case "makro-ekonomi": {

@@ -70,12 +70,22 @@ export function toDisplayResource(data: {
       gambarUrl: pr.gambarUrl,
       urutan: pr.urutan,
     })),
-    video: data.videos.map((v) => ({
-      id: v.id,
-      judul: v.judul,
-      url: v.url,
-      urutan: v.urutan,
-    })),
+    video: data.videos.map((v) => {
+      let finalUrl = v.url;
+      // Jika URL mengarah ke bucket Cloudeka privat, alihkan ke endpoint API stream internal
+      if (v.url.includes("kencana.basic.box.cloudeka.id/far1023s-bucket-ctkpuc/")) {
+        const key = v.url.split("/far1023s-bucket-ctkpuc/")[1];
+        if (key) {
+          finalUrl = `/api/display/video/stream?key=${encodeURIComponent(key)}`;
+        }
+      }
+      return {
+        id: v.id,
+        judul: v.judul,
+        url: finalUrl,
+        urutan: v.urutan,
+      };
+    }),
     makroEkonomi: data.makroEkonomiList.map((m) => ({
       id: m.id,
       judul: m.judul,
