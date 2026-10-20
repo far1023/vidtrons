@@ -10,6 +10,18 @@ import * as promoModel from "@/server/models/promo.model";
 import * as videoModel from "@/server/models/video.model";
 import * as makroEkonomiModel from "@/server/models/makro-ekonomi.model";
 import { toDisplayResource, type DisplayFeedData } from "@/server/resources/display.resource";
+import { resolveVideoUrl } from "@/server/services/s3.service";
+
+/**
+ * Menandatangani URL video bucket privat. Dilakukan di LUAR unstable_cache
+ * (cache hanya menyimpan URL asli), supaya presigned URL tidak ikut tersimpan
+ * lalu kedaluwarsa di dalam cache.
+ */
+async function signVideos<T extends { url: string }>(videos: T[]): Promise<T[]> {
+  return Promise.all(
+    videos.map(async (v) => ({ ...v, url: await resolveVideoUrl(v.url) }))
+  );
+}
 
 async function fetchRawDisplayFeed(todayDateStr: string): Promise<DisplayFeedData> {
   const endDateStr = getDateOffsetString(7);
@@ -54,7 +66,7 @@ const getCachedFeed = unstable_cache(
   }
 );
 
-export async function getDisplayFeed(): Promise<DisplayFeedData> {
+async function loadDisplayFeed(): Promise<DisplayFeedData> {
   const todayDateStr = getTodayDateString();
 
   // In development, always fetch fresh data so direct DB changes/seeds are immediately visible
@@ -75,6 +87,12 @@ export async function getDisplayFeed(): Promise<DisplayFeedData> {
     }
     throw error;
   }
+}
+
+export async function getDisplayFeed(): Promise<DisplayFeedData> {
+  const feed = await loadDisplayFeed();
+  // Spread membuat objek baru, jadi data di dalam cache tidak termutasi
+  return { ...feed, video: await signVideos(feed.video) };
 }
 
 /**
@@ -129,21 +147,14 @@ export async function getPanelFeed(panel: string): Promise<unknown> {
     }
     case "video": {
       const list = await videoModel.active();
-      return list.map((v) => {
-        let finalUrl = v.url;
-        if (v.url.includes("kencana.basic.box.cloudeka.id/far1023s-bucket-ctkpuc/")) {
-          const key = v.url.split("/far1023s-bucket-ctkpuc/")[1];
-          if (key) {
-            finalUrl = `/api/display/video/stream?key=${encodeURIComponent(key)}`;
-          }
-        }
-        return {
+      return signVideos(
+        list.map((v) => ({
           id: v.id,
           judul: v.judul,
-          url: finalUrl,
+          url: v.url,
           urutan: v.urutan,
-        };
-      });
+        }))
+      );
     }
     case "makroEkonomi":
     case "makro-ekonomi": {
