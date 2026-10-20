@@ -1,43 +1,49 @@
-"use client";
+"use client"
 
-import { useEffect, useRef, useState } from "react";
-import useSWR from "swr";
-import type { DisplayFeedData } from "@/types/display";
+import { useEffect, useRef, useState } from "react"
+import useSWR from "swr"
+import type { DisplayFeedData } from "@/types/display"
 
-const STORAGE_KEY = "bppddmi_display_feed_cache";
-const POLL_INTERVAL_MS = 60_000;
+const STORAGE_KEY = "bppddmi_display_feed_cache"
+/**
+ * Polling hanya pengaman: perubahan data datang lewat Pusher. Polling tetap
+ * perlu untuk mengambil presigned URL video baru (berganti harian) dan
+ * menangkap event yang terlewat. Tiap panggilan = 1 edge request + 1
+ * function invocation di Vercel, jadi interval dibuat panjang.
+ */
+const POLL_INTERVAL_MS = 10 * 60_000
 
 async function fetcher(url: string): Promise<DisplayFeedData> {
-  const response = await fetch(url);
+  const response = await fetch(url)
   if (!response.ok) {
-    throw new Error(`Gagal memuat display feed: HTTP ${response.status}`);
+    throw new Error(`Gagal memuat display feed: HTTP ${response.status}`)
   }
-  const json = await response.json();
-  return json.data;
+  const json = await response.json()
+  return json.data
 }
 
 export interface UseDisplayDataOptions {
-  pusherKey?: string;
-  pusherCluster?: string;
+  pusherKey?: string
+  pusherCluster?: string
 }
 
 export function useDisplayData(options?: UseDisplayDataOptions) {
-  const memoryFallbackRef = useRef<DisplayFeedData | null>(null);
-  const [cachedData, setCachedData] = useState<DisplayFeedData | null>(null);
+  const memoryFallbackRef = useRef<DisplayFeedData | null>(null)
+  const [cachedData, setCachedData] = useState<DisplayFeedData | null>(null)
 
   // Initialize from localStorage on mount (client-only)
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
+      const stored = localStorage.getItem(STORAGE_KEY)
       if (stored) {
-        const parsed = JSON.parse(stored) as DisplayFeedData;
-        memoryFallbackRef.current = parsed;
-        setCachedData(parsed);
+        const parsed = JSON.parse(stored) as DisplayFeedData
+        memoryFallbackRef.current = parsed
+        setCachedData(parsed)
       }
     } catch (err) {
-      console.warn("Gagal membaca cache display dari localStorage:", err);
+      console.warn("Gagal membaca cache display dari localStorage:", err)
     }
-  }, []);
+  }, [])
 
   const { data, error, isLoading, mutate } = useSWR<DisplayFeedData>(
     "/api/display",
@@ -47,97 +53,102 @@ export function useDisplayData(options?: UseDisplayDataOptions) {
       revalidateOnFocus: false,
       dedupingInterval: 10_000,
       onSuccess: (freshData) => {
-        memoryFallbackRef.current = freshData;
+        memoryFallbackRef.current = freshData
         try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(freshData));
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(freshData))
         } catch (err) {
-          console.warn("Gagal menyimpan cache display ke localStorage:", err);
+          console.warn("Gagal menyimpan cache display ke localStorage:", err)
         }
       },
     }
-  );
+  )
 
   // Pusher Realtime Subscription (per-panel update)
   const initialKey =
     options?.pusherKey ||
     process.env.NEXT_PUBLIC_PUSHER_KEY ||
     process.env.PUSHER_KEY ||
-    "";
+    ""
 
   const initialCluster =
     options?.pusherCluster ||
     process.env.NEXT_PUBLIC_PUSHER_CLUSTER ||
     process.env.PUSHER_CLUSTER ||
-    "ap1";
+    "ap1"
 
-  const [activeKey, setActiveKey] = useState<string>(initialKey);
-  const [activeCluster, setActiveCluster] = useState<string>(initialCluster);
+  const [activeKey, setActiveKey] = useState<string>(initialKey)
+  const [activeCluster, setActiveCluster] = useState<string>(initialCluster)
 
   // If Pusher key is not yet present on client, fetch it dynamically from /api/display/config
   useEffect(() => {
-    if (activeKey) return;
+    if (activeKey) return
 
     fetch("/api/display/config")
       .then((res) => (res.ok ? res.json() : null))
       .then((cfg) => {
         if (cfg?.pusher?.key) {
-          setActiveKey(cfg.pusher.key);
+          setActiveKey(cfg.pusher.key)
           if (cfg.pusher.cluster) {
-            setActiveCluster(cfg.pusher.cluster);
+            setActiveCluster(cfg.pusher.cluster)
           }
         } else {
           console.warn(
             "[Pusher Client] PUSHER_KEY belum terdeteksi. Pastikan PUSHER_KEY sudah diset di .env.local dan server telah direstart."
-          );
+          )
         }
       })
       .catch((err) => {
-        console.warn("[Pusher Client] Gagal memuat konfigurasi Pusher:", err);
-      });
-  }, [activeKey]);
+        console.warn("[Pusher Client] Gagal memuat konfigurasi Pusher:", err)
+      })
+  }, [activeKey])
 
   useEffect(() => {
-    if (!activeKey) return;
+    if (!activeKey) return
 
-    let isSubscribed = true;
-    let pusher: import("pusher-js").default | null = null;
+    let isSubscribed = true
+    let pusher: import("pusher-js").default | null = null
 
     import("pusher-js").then(({ default: PusherClient }) => {
-      if (!isSubscribed) return;
+      if (!isSubscribed) return
 
       console.log(
         `[Pusher Client] Menghubungkan ke Pusher (cluster: ${activeCluster})...`
-      );
+      )
 
       pusher = new PusherClient(activeKey, {
         cluster: activeCluster,
-      });
+      })
 
+      let hasConnected = false
       pusher.connection.bind("connected", () => {
-        console.log("[Pusher Client] Sukses terhubung ke Pusher server.");
-      });
+        console.log("[Pusher Client] Sukses terhubung ke Pusher server.")
+        // Sambungan ulang (bukan koneksi pertama): event selama terputus
+        // tidak diterima, jadi ambil data terbaru sekali.
+        if (hasConnected) void mutate()
+        hasConnected = true
+      })
 
       pusher.connection.bind("error", (err: unknown) => {
-        console.error("[Pusher Client] Error koneksi Pusher:", err);
-      });
+        console.error("[Pusher Client] Error koneksi Pusher:", err)
+      })
 
-      const channel = pusher.subscribe("display-lobby");
+      const channel = pusher.subscribe("display-lobby")
 
       channel.bind("pusher:subscription_succeeded", () => {
         console.log(
           "[Pusher Client] Berhasil subscribe ke channel 'display-lobby'."
-        );
-      });
+        )
+      })
 
       channel.bind(
         "panel-update",
         async (payload: { panel?: string; data?: unknown }) => {
-          if (!payload?.panel) return;
+          if (!payload?.panel) return
 
           console.log(
             `[Pusher Client] Menerima event update untuk panel '${payload.panel}':`,
             payload
-          );
+          )
 
           const panelKeyMap: Record<string, keyof DisplayFeedData> = {
             pengumuman: "pengumuman",
@@ -149,72 +160,72 @@ export function useDisplayData(options?: UseDisplayDataOptions) {
             makroEkonomi: "makroEkonomi",
             "makro-ekonomi": "makroEkonomi",
             setting: "setting",
-          };
+          }
 
-          const targetKey = panelKeyMap[payload.panel];
-          if (!targetKey) return;
+          const targetKey = panelKeyMap[payload.panel]
+          if (!targetKey) return
 
-          let panelData = payload.data;
+          let panelData = payload.data
 
           // If payload did not embed fresh data, fetch only this panel from server
           if (panelData === undefined) {
             try {
-              const res = await fetch(`/api/display?panel=${targetKey}`);
+              const res = await fetch(`/api/display?panel=${targetKey}`)
               if (res.ok) {
-                const json = await res.json();
+                const json = await res.json()
                 panelData =
-                  json?.data?.data !== undefined ? json.data.data : json?.data;
+                  json?.data?.data !== undefined ? json.data.data : json?.data
               }
             } catch (fetchErr) {
               console.warn(
                 `[Pusher Client] Gagal mengambil update data panel '${targetKey}':`,
                 fetchErr
-              );
-              return;
+              )
+              return
             }
           }
 
           if (panelData !== undefined) {
             // Mutate ONLY the specific panel inside SWR without triggering a full revalidation
             mutate((prev) => {
-              if (!prev) return prev;
+              if (!prev) return prev
               const updated: DisplayFeedData = {
                 ...prev,
                 [targetKey]: panelData,
-              };
-              memoryFallbackRef.current = updated;
+              }
+              memoryFallbackRef.current = updated
               try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
               } catch {
                 // ignore storage error
               }
-              return updated;
-            }, false);
+              return updated
+            }, false)
 
             console.log(
               `[Pusher Client] Panel '${targetKey}' berhasil diperbarui di layar lobby!`
-            );
+            )
           }
         }
-      );
-    });
+      )
+    })
 
     return () => {
-      isSubscribed = false;
+      isSubscribed = false
       if (pusher) {
-        pusher.unsubscribe("display-lobby");
-        pusher.disconnect();
+        pusher.unsubscribe("display-lobby")
+        pusher.disconnect()
       }
-    };
-  }, [activeKey, activeCluster, mutate]);
+    }
+  }, [activeKey, activeCluster, mutate])
 
   // Fallback hierarchy: fresh SWR data -> in-memory ref -> localStorage state
-  const effectiveData = data ?? memoryFallbackRef.current ?? cachedData;
+  const effectiveData = data ?? memoryFallbackRef.current ?? cachedData
 
   return {
     data: effectiveData,
     isLoading: isLoading && !effectiveData,
     error,
     refresh: mutate,
-  };
+  }
 }
