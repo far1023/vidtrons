@@ -23,12 +23,20 @@ export type VideoPanelProps = {
 
 /** Video yang gagal dilewati selama jeda ini, lalu dicoba lagi otomatis. */
 const FAILED_COOLDOWN_MS = 30_000
-/** Batas menunggu video mulai dimuat sebelum dianggap gagal. */
-const LOAD_TIMEOUT_MS = 20_000
-/** Batas video macet (buffering) tanpa kemajuan sebelum dilewati. */
-const STALL_TIMEOUT_MS = 15_000
+/** Batas menunggu video mulai dimuat sebelum dianggap macet. */
+const LOAD_TIMEOUT_MS = 45_000
+/** Batas video macet (buffering) tanpa kemajuan sebelum ditangani. */
+const STALL_TIMEOUT_MS = 30_000
 /** Saat semua video gagal, cek ulang setiap interval ini. */
 const EMPTY_RETRY_MS = 5_000
+
+/**
+ * Browser bawaan TV (Samsung Tizen, LG webOS, dll.) sering memutar <video>
+ * lewat pemutar sistem yang mudah membuka layar penuh, terutama saat elemen
+ * video baru dibuat. Di perangkat ini elemen tidak boleh dibuat/dibongkar
+ * berulang dan elemen preload tersembunyi dimatikan.
+ */
+const TV_BROWSER_PATTERN = /Tizen|SMART-?TV|Web0S|WebOS|HbbTV/i
 
 export function VideoPanel({
   playlist,
@@ -51,6 +59,16 @@ export function VideoPanel({
   const [, rerender] = useReducer((n: number) => n + 1, 0)
   const videoRef = useRef<HTMLVideoElement>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // URL terakhir yang diputar: elemen <video> dipertahankan walau semua video
+  // sedang gagal, supaya tidak dibongkar lalu dibuat ulang.
+  const heldUrlRef = useRef<string | null>(null)
+  // Setelah video gagal, elemen yang sama dimuat ulang saat sudah boleh dicoba.
+  const needsReloadRef = useRef(false)
+  const [isTvBrowser, setIsTvBrowser] = useState(false)
+
+  useEffect(() => {
+    setIsTvBrowser(TV_BROWSER_PATTERN.test(navigator.userAgent))
+  }, [])
 
   const isPlayable = (url: string) => {
     const failedAt = failedRef.current[url]
@@ -78,9 +96,17 @@ export function VideoPanel({
     ? (items.find((i) => i.url === activeUrl) ?? null)
     : null
 
+  if (activeUrl) heldUrlRef.current = activeUrl
+  const heldUrl =
+    heldUrlRef.current && items.some((i) => i.url === heldUrlRef.current)
+      ? heldUrlRef.current
+      : null
+  const videoSrc = activeUrl ?? heldUrl
+
   const nextUrl = activeUrl ? pickNext(activeUrl) : null
-  const preloadUrl = nextUrl && nextUrl !== activeUrl ? nextUrl : null
-  const isSingle = !preloadUrl
+  const hasDifferentNext = !!nextUrl && nextUrl !== activeUrl
+  const isSingle = !hasDifferentNext
+  const preloadUrl = hasDifferentNext && !isTvBrowser ? nextUrl : null
 
   const clearTimer = useCallback(() => {
     if (timerRef.current) {
@@ -89,21 +115,38 @@ export function VideoPanel({
     }
   }, [])
 
+  /** Video error nyata: dilewati, dicoba lagi setelah jeda. */
   const fail = (url: string) => {
     clearTimer()
-    console.warn("Video dilewati (gagal/macet):", url)
+    console.warn("Video dilewati (gagal):", url)
     failedRef.current[url] = Date.now()
+    needsReloadRef.current = true
     setCurrentUrl(pickNext(url))
     rerender()
   }
 
-  // Timer memanggil versi terbaru `fail` agar tidak memakai data usang
-  const failRef = useRef(fail)
-  failRef.current = fail
+  /** Video macet/tidak mulai: satu video dimuat ulang di elemen yang sama. */
+  const stall = (url: string) => {
+    clearTimer()
+    if (items.length > 1) {
+      fail(url)
+      return
+    }
+    console.warn("Video macet, memuat ulang:", url)
+    const el = videoRef.current
+    if (el) {
+      el.load()
+      void el.play()?.catch(() => {})
+    }
+  }
+
+  // Timer memanggil versi terbaru `stall` agar tidak memakai data usang
+  const stallRef = useRef(stall)
+  stallRef.current = stall
 
   const armTimer = (url: string, ms: number) => {
     clearTimer()
-    timerRef.current = setTimeout(() => failRef.current(url), ms)
+    timerRef.current = setTimeout(() => stallRef.current(url), ms)
   }
 
   // Bersihkan timer saat berganti video atau komponen dilepas
@@ -128,11 +171,45 @@ export function VideoPanel({
     return () => document.removeEventListener("visibilitychange", handleVisible)
   }, [])
 
+  // Jika browser membuka layar penuh untuk elemen video ini, tutup lagi.
+  // Layar penuh untuk seluruh halaman (mode kiosk) tidak disentuh.
+  useEffect(() => {
+    type FullscreenDoc = Document & {
+      webkitFullscreenElement?: Element | null
+      webkitExitFullscreen?: () => void
+    }
+    const leaveIfVideo = () => {
+      const doc = document as FullscreenDoc
+      const fsEl = doc.fullscreenElement ?? doc.webkitFullscreenElement
+      if (!fsEl || fsEl !== videoRef.current) return
+      if (doc.exitFullscreen) void doc.exitFullscreen().catch(() => {})
+      else doc.webkitExitFullscreen?.()
+    }
+    document.addEventListener("fullscreenchange", leaveIfVideo)
+    document.addEventListener("webkitfullscreenchange", leaveIfVideo)
+    return () => {
+      document.removeEventListener("fullscreenchange", leaveIfVideo)
+      document.removeEventListener("webkitfullscreenchange", leaveIfVideo)
+    }
+  }, [])
+
   // Semua video sedang gagal: cek ulang berkala sampai ada yang bisa diputar
   useEffect(() => {
     if (items.length === 0 || activeVideo) return
     const timer = setTimeout(rerender, EMPTY_RETRY_MS)
     return () => clearTimeout(timer)
+  })
+
+  // Video yang tadi gagal sudah boleh dicoba lagi: muat ulang elemen yang sama
+  // (src bisa saja tidak berubah, sehingga tanpa ini tidak ada yang terjadi)
+  useEffect(() => {
+    if (!activeUrl || !needsReloadRef.current) return
+    needsReloadRef.current = false
+    const el = videoRef.current
+    if (el) {
+      el.load()
+      void el.play()?.catch(() => {})
+    }
   })
 
   function handleEnded() {
@@ -154,22 +231,26 @@ export function VideoPanel({
       )}
     >
       <AspectRatio ratio={16 / 9} className="max-h-full w-full overflow-hidden">
-        {activeVideo ? (
+        {videoSrc && (
+          // Tanpa `key`: elemen dipertahankan dan hanya `src` yang berganti,
+          // karena membuat elemen video baru bisa memicu layar penuh di TV.
           <video
             ref={videoRef}
-            key={activeVideo.url}
             className={cn(
-              "h-full w-full",
+              "pointer-events-none h-full w-full",
               fit === "cover" ? "object-cover" : "object-contain"
             )}
-            src={activeVideo.url}
+            src={videoSrc}
             autoPlay
             muted
             playsInline
+            webkit-playsinline="true"
+            disablePictureInPicture
+            disableRemotePlayback
             preload="auto"
             // Satu video saja: loop native agar ulang tanpa jeda
             loop={isSingle}
-            onLoadStart={() => armTimer(activeVideo.url, LOAD_TIMEOUT_MS)}
+            onLoadStart={() => armTimer(videoSrc, LOAD_TIMEOUT_MS)}
             onLoadedData={() => {
               clearTimer()
               void videoRef.current?.play()?.catch(() => {})
@@ -178,19 +259,21 @@ export function VideoPanel({
             onTimeUpdate={() => {
               if (timerRef.current) clearTimer()
             }}
-            onWaiting={() => armTimer(activeVideo.url, STALL_TIMEOUT_MS)}
-            onStalled={() => armTimer(activeVideo.url, STALL_TIMEOUT_MS)}
+            onWaiting={() => armTimer(videoSrc, STALL_TIMEOUT_MS)}
+            onStalled={() => armTimer(videoSrc, STALL_TIMEOUT_MS)}
             onEnded={handleEnded}
-            onError={() => fail(activeVideo.url)}
+            onError={() => fail(videoSrc)}
           />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center bg-black/60 text-[length:var(--fs-body)] text-[var(--c-muted)]">
+        )}
+        {!activeVideo && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/60 text-[length:var(--fs-body)] text-[var(--c-muted)]">
             {labels.video.judul}
           </div>
         )}
       </AspectRatio>
 
-      {/* Pemuat awal video berikutnya agar pergantian tidak menunggu unduhan */}
+      {/* Pemuat awal video berikutnya agar pergantian tidak menunggu unduhan
+          (dimatikan di browser TV) */}
       {preloadUrl && (
         <video
           key={preloadUrl}
