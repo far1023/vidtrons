@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 export default function Loading() {
   return (
     <main className="relative isolate min-h-screen overflow-x-hidden bg-[#fff9f4] text-[var(--c-text)]">
-      {/* Background SVG Gradient dari halaman lobby */}
+      {/* Background SVG gradient from the lobby page */}
       <div
         className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
         role="img"

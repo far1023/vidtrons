@@ -24,7 +24,7 @@ import { cn } from "@/lib/utils"
 export interface PromoFormValues {
   judul: string
   gambarUrl: string
-  /** Disimpan sebagai string agar kolom bisa dikosongkan saat mengetik */
+  /** Stored as a string so the field can be cleared while typing */
   urutan: string
   isActive: boolean
 }
@@ -88,7 +88,7 @@ export function apiDetailsToErrors(json: unknown): PromoFormErrors {
 /* -------------------------------------------------------------------------- */
 
 function PreviewImage({ url }: { url: string }) {
-  // Komponen ini di-remount (key={url}) setiap URL berubah, jadi state selalu segar.
+  // This component is remounted (key={url}) whenever the URL changes, so state is always fresh.
   const [status, setStatus] = React.useState<"loading" | "loaded" | "error">(
     "loading"
   )
@@ -162,7 +162,7 @@ function ImagePreview({ url }: { url: string }) {
 /* -------------------------------------------------------------------------- */
 
 interface PromoFormFieldsProps {
-  /** Awalan id agar tidak bentrok jika dua form pernah dirender bersamaan */
+  /** Id prefix to avoid collisions if two forms are ever rendered at the same time */
   idPrefix: string
   values: PromoFormValues
   onChange: (patch: Partial<PromoFormValues>) => void

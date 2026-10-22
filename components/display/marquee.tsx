@@ -6,22 +6,22 @@ import { cn } from "@/lib/utils"
 
 export type MarqueeProps = {
   children: React.ReactNode
-  /** Kecepatan gerak dalam piksel per detik (konstan, tidak bergantung panjang konten) */
+  /** Movement speed in pixels per second (constant, independent of content length) */
   speed?: number
-  /** Jarak antar item di dalam satu segmen sekaligus jarak sambungan loop (px) */
+  /** Spacing between items within a segment, also the loop seam spacing (px) */
   gap?: number
   className?: string
 }
 
 /**
- * Marquee dengan loop tanpa sambungan terlihat.
+ * Marquee with a loop that has no visible seam.
  *
- * - Konten dirender dalam "segmen" yang diulang sampai menutupi lebar wadah.
- * - Track digeser tepat sebesar lebar SATU segmen (diukur nyata di browser),
- *   sehingga posisi akhir identik dengan posisi awal -> tidak ada lompatan.
- * - Durasi = lebar segmen / kecepatan, jadi laju gerak selalu konstan.
- * - Saat ukuran berubah (data baru, font selesai dimuat), animasi dilanjutkan
- *   dari progres yang sama, tidak diulang dari awal.
+ * - Content is rendered in "segments" repeated until they cover the container width.
+ * - The track is shifted by exactly the width of ONE segment (measured in the browser),
+ *   so the end position is identical to the start position -> no jump.
+ * - Duration = segment width / speed, so the movement rate is always constant.
+ * - When the size changes (new data, fonts finished loading), the animation continues
+ *   from the same progress instead of restarting.
  */
 export function Marquee({
   children,
@@ -58,7 +58,7 @@ export function Marquee({
     return () => ro.disconnect()
   }, [])
 
-  // Jalankan / perbarui animasi tanpa mengulang dari awal
+  // Start / update the animation without restarting from the beginning
   React.useEffect(() => {
     const track = trackRef.current
     if (!track || segW <= 0 || speed <= 0) return
@@ -93,7 +93,7 @@ export function Marquee({
     }
   }, [])
 
-  // Cukup banyak salinan agar track selalu lebih panjang dari wadah + 1 segmen
+  // Enough copies so the track is always longer than the container + 1 segment
   const copies =
     segW > 0 && containerW > 0
       ? Math.max(2, Math.ceil(containerW / segW) + 1)

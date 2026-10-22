@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 export default function Page() {
   return (
     <main className="relative isolate flex min-h-screen flex-col justify-between overflow-x-hidden bg-[#fff9f4] text-[var(--c-text)] antialiased selection:bg-emerald-100 selection:text-emerald-900">
-      {/* Background SVG Gradient dari halaman lobby */}
+      {/* Background SVG gradient from the lobby page */}
       <div
         className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
         role="img"

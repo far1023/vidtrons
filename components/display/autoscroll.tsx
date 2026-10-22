@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useAutoScroll, type UseAutoScrollOptions } from "@/hooks/use-autoscroll";
+import { useAutoScroll } from "@/hooks/use-autoscroll";
 import { cn } from "@/lib/utils";
 
 export interface AutoscrollProps extends React.HTMLAttributes<HTMLDivElement> {

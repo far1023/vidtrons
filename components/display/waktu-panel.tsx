@@ -16,11 +16,11 @@ export const slideClass =
   "col-start-1 row-start-1 flex min-h-0 flex-col justify-center p-[var(--pad)] opacity-0 pointer-events-none transition-opacity duration-700 data-[active=true]:opacity-100 data-[active=true]:pointer-events-auto"
 
 /**
- * Menentukan warna teks suhu berdasarkan nilainya:
- * - Nyaman / sejuk (<= 28°C): warna gelap tegas (var(--c-text))
- * - Hangat (29°C - 31°C): amber / oranye hangat
- * - Panas (32°C - 33°C): oranye kemerahan
- * - Sangat panas (>= 34°C): merah keorenan tegas
+ * Determines the temperature text color based on its value:
+ * - Comfortable / cool (<= 28°C): strong dark color (var(--c-text))
+ * - Warm (29°C - 31°C): warm amber / orange
+ * - Hot (32°C - 33°C): reddish orange
+ * - Very hot (>= 34°C): strong red
  */
 export function getTemperatureColor(temp: number): string {
   if (temp >= 34) return "text-red-600"
@@ -30,9 +30,9 @@ export function getTemperatureColor(temp: number): string {
 }
 
 /**
- * Ikon wajah untuk kartu kualitas udara:
- * - AQI <= 100: wajah tersenyum
- * - AQI > 100: wajah memakai masker
+ * Face icon for the air quality card:
+ * - AQI <= 100: smiling face
+ * - AQI > 100: face wearing a mask
  */
 function AirQualityFace({
   unhealthy,
@@ -67,10 +67,10 @@ function AirQualityFace({
   )
 }
 
-/** Batas atas tiap kategori US AQI (Good ... Hazardous). */
+/** Upper bound of each US AQI category (Good ... Hazardous). */
 const AQI_UPPER = [50, 100, 150, 200, 300, 500]
 
-/** Posisi penanda pada skala AQI (6 segmen sama lebar), hasil 0-100. */
+/** Marker position on the AQI scale (6 equal-width segments), result 0-100. */
 function aqiScalePercent(aqi: number): number {
   let lower = 0
   for (let i = 0; i < AQI_UPPER.length; i++) {
@@ -84,7 +84,7 @@ function aqiScalePercent(aqi: number): number {
   return 100
 }
 
-/** Jam dengan titik dua berkedip. Jika format tak dikenali, tampil apa adanya. */
+/** Clock with a blinking colon. If the format is not recognized, it is shown as is. */
 function ClockDigits({ value }: { value: string }) {
   const parts = value.split(/[:.]/)
   if (parts.length < 2) return <>{value}</>
@@ -105,8 +105,8 @@ function ClockDigits({ value }: { value: string }) {
 }
 
 /**
- * Hitung mundur dalam kotak per satuan (Jam / Menit / Detik).
- * Jika format countdown bukan "HH:mm:ss" atau "mm:ss", tampil sebagai teks biasa.
+ * Countdown in boxes per unit (Hours / Minutes / Seconds).
+ * If the countdown format is not "HH:mm:ss" or "mm:ss", it is shown as plain text.
  */
 function CountdownTiles({ value }: { value: string }) {
   const parts = value.split(":")
@@ -147,7 +147,7 @@ function CountdownTiles({ value }: { value: string }) {
 
 export type WaktuPanelProps = {
   className?: string
-  /** Data dari usePrayerWeather (dipanggil sekali di DisplayScreen) */
+  /** Data from usePrayerWeather (called once in DisplayScreen) */
   prayerWeather: ReturnType<typeof usePrayerWeather>
 }
 
@@ -156,15 +156,15 @@ export function WaktuPanel({ className, prayerWeather }: WaktuPanelProps) {
   const { prayerData, weatherData, airQuality } = prayerWeather
   const prayerMode = usePrayerMode(prayerData?.timings, clock.secondsNow)
 
-  // State yang bergantung pada waktu sekarang (countdown, sholat berikutnya, mode azan)
-  // berbeda antara server & browser. Tahan sampai mount agar hidrasi cocok.
+  // State that depends on the current time (countdown, next prayer, azan mode)
+  // differs between server & browser. Hold until mount so hydration matches.
   const [mounted, setMounted] = useState(false)
   useEffect(() => {
     setMounted(true)
   }, [])
   const nextIndex = mounted ? prayerMode.nextIndex : -1
 
-  // Available standard carousel slides: Jam & Cuaca dan Jadwal Sholat
+  // Available standard carousel slides: Jam & Cuaca and Jadwal Sholat
   const availableSlides: string[] = ["jam-cuaca"]
   if (prayerData && prayerData.timings.length > 0)
     availableSlides.push("sholat")
@@ -199,7 +199,7 @@ export function WaktuPanel({ className, prayerWeather }: WaktuPanelProps) {
       : null
   const WeatherIcon = weatherInfo?.icon
 
-  // Field tambahan (opsional): tambahkan di usePrayerWeather agar tampil.
+  // Extra fields (optional): add them in usePrayerWeather to display.
   const extraWeather = weatherData as
     | (NonNullable<typeof weatherData> & {
         windSpeed?: number
@@ -253,7 +253,7 @@ export function WaktuPanel({ className, prayerWeather }: WaktuPanelProps) {
           }
         `}</style>
 
-        {/* Header: hari, tanggal, cuaca + jam besar */}
+        {/* Header: day, date, weather + large clock */}
         <div className="flex flex-col gap-2.5 p-4">
           <div className="flex items-start justify-between gap-3">
             {weatherData && WeatherIcon && weatherInfo ? (
@@ -312,7 +312,7 @@ export function WaktuPanel({ className, prayerWeather }: WaktuPanelProps) {
           ) : null}
         </div>
 
-        {/* Kartu Kualitas Udara dengan glow sesuai kategori: stick ke bottom */}
+        {/* Air Quality card with a category-colored glow: sticks to the bottom */}
         {airQuality ? (
           <div
             style={glowStyle}
@@ -348,7 +348,7 @@ export function WaktuPanel({ className, prayerWeather }: WaktuPanelProps) {
                 />
               </div>
 
-              {/* Skala AQI dengan penanda posisi */}
+              {/* AQI scale with position marker */}
               <div
                 className="relative my-1 h-1.5 rounded-full"
                 style={{
@@ -433,7 +433,7 @@ export function WaktuPanel({ className, prayerWeather }: WaktuPanelProps) {
         )}
         style={{ backgroundImage: "url('/images/menjelang-azan.jpeg')" }}
       >
-        {/* Overlay gradasi untuk kontras teks (tanpa backdrop-blur agar tidak memicu GPU tile flicker) */}
+        {/* Gradient overlay for text contrast (no backdrop-blur to avoid GPU tile flicker) */}
         <div className="pointer-events-none absolute inset-0 bg-linear-to-b from-zinc-700/55 via-zinc-800/60 to-zinc-900/75" />
 
         <div className="relative z-10 flex flex-col items-center gap-2">
@@ -461,7 +461,7 @@ export function WaktuPanel({ className, prayerWeather }: WaktuPanelProps) {
         </div>
       </div>
 
-      {/* SLIDE 5: WAKTU AZAN TIBA (aktif otomatis saat isArrived) */}
+      {/* SLIDE 5: AZAN TIME ARRIVED (activates automatically on isArrived) */}
       <div
         data-slide="azan-tiba"
         data-active={String(currentSlide === "azan-tiba")}
@@ -476,7 +476,7 @@ export function WaktuPanel({ className, prayerWeather }: WaktuPanelProps) {
         <div className="relative z-10 flex flex-col items-center gap-2.5">
           {displayPrayer ? (
             <>
-              {/* Ikon lonceng dengan halo berdenyut */}
+              {/* Bell icon with a pulsing halo */}
               <div className="relative grid size-[clamp(2.6rem,3.4vw,4.4rem)] place-items-center">
                 <span className="absolute inset-0 animate-pulse rounded-full bg-[var(--c-accent)]/40" />
                 <span className="relative grid size-[78%] place-items-center rounded-full bg-[var(--c-accent)] ring-2 ring-white/30">

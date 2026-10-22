@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     "Perkembangan indikator utama pembangunan Kota Dumai selama lima tahun terakhir dalam bentuk grafik.",
 }
 
-// Data tetap di-cache lewat unstable_cache; halaman tidak diprerender saat build
+// Data is still cached via unstable_cache; the page is not prerendered at build time
 export const dynamic = "force-dynamic"
 
 export default async function GrafikMakroEkonomiPage() {
@@ -24,7 +24,7 @@ export default async function GrafikMakroEkonomiPage() {
 
   return (
     <main className="relative isolate flex min-h-screen flex-col overflow-x-hidden bg-[#fff9f4] text-[var(--c-text)] antialiased selection:bg-emerald-100 selection:text-emerald-900">
-      {/* Background SVG Gradient dari halaman lobby */}
+      {/* Background SVG gradient from the lobby page */}
       <div
         className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
         role="img"
@@ -45,7 +45,7 @@ export default async function GrafikMakroEkonomiPage() {
             />
           </div>
 
-          {/* Ubah href jika portal pemilihan layar ada di rute lain */}
+          {/* Change href if the screen selection portal is on another route */}
           <Link
             href="/"
             className={buttonVariants({ variant: "outline", size: "sm" })}

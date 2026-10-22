@@ -5,9 +5,9 @@ import { cn } from "@/lib/utils"
 export type RunningTextProps = {
   items?: { id?: number; isi: string }[]
   className?: string
-  /** Kecepatan gerak teks (px per detik) */
+  /** Text movement speed (px per second) */
   speed?: number
-  /** Pesan tambahan otomatis (mis. info kualitas udara), ditambahkan setelah item */
+  /** Extra automatic messages (e.g. air quality info), appended after the items */
   extraMessages?: (string | null | undefined)[]
 }
 
@@ -31,7 +31,7 @@ export function RunningText({
       )}
       style={{ contain: "paint" }}
     >
-      {/* Label tetap di kiri */}
+      {/* Label fixed on the left */}
       <div className="relative z-10 flex shrink-0 items-center gap-2.5 bg-emerald-500 px-5 text-[clamp(0.9rem,1.1vw,1.35rem)] font-black tracking-widest uppercase shadow-[8px_0_16px_-4px_rgba(0,0,0,0.35)] sm:px-7">
         <span className="size-2.5 animate-pulse rounded-full bg-white sm:size-3" />
         Info

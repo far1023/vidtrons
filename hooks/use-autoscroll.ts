@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type RefObject } from "react";
+import { useEffect, useState, type RefObject } from "react";
 import { config } from "@/lib/config";
 
 export interface UseAutoScrollOptions {

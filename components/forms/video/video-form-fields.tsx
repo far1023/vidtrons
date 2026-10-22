@@ -24,7 +24,7 @@ import { cn } from "@/lib/utils"
 export interface VideoFormValues {
   judul: string
   url: string
-  /** Disimpan sebagai string agar kolom bisa dikosongkan saat mengetik */
+  /** Stored as a string so the field can be cleared while typing */
   urutan: string
   isActive: boolean
 }
@@ -51,8 +51,8 @@ export function toVideoPayload(v: VideoFormValues) {
 export type UrlProblem = { level: "error" | "warning"; message: string }
 
 /**
- * Periksa URL video sebelum dikirim. "error" memblokir penyimpanan karena
- * pasti tidak bisa diputar oleh tag <video>; "warning" hanya peringatan.
+ * Check the video URL before submitting. "error" blocks saving because the video
+ * definitely cannot be played by the <video> tag; "warning" is only a notice.
  */
 export function detectUrlProblem(raw: string): UrlProblem | null {
   const value = raw.trim()
@@ -146,7 +146,7 @@ const PREVIEW_BOX =
 type VideoMeta = { duration: number; width: number; height: number }
 
 function PreviewVideo({ url }: { url: string }) {
-  // Di-remount lewat key={url}, jadi state selalu segar untuk URL baru.
+  // Remounted via key={url}, so state is always fresh for a new URL.
   const [status, setStatus] = React.useState<"loading" | "ready" | "error">(
     "loading"
   )

@@ -49,7 +49,7 @@ export function AddPromoDialog({
 
   const handleChange = (patch: Partial<PromoFormValues>) => {
     setValues((prev) => ({ ...prev, ...patch }))
-    // Hapus pesan error pada field yang sedang diubah
+    // Clear the error message on the field being edited
     setErrors((prev) => {
       const next = { ...prev }
       for (const key of Object.keys(patch)) delete next[key]
@@ -57,7 +57,7 @@ export function AddPromoDialog({
     })
   }
 
-  // Cegah dialog tertutup (klik luar / Esc) saat data sedang dikirim
+  // Prevent the dialog from closing (outside click / Esc) while data is being submitted
   const handleOpenChange = (next: boolean) => {
     if (isSubmitting && !next) return
     onOpenChange(next)

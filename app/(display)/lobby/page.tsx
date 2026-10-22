@@ -60,7 +60,7 @@ export default function DisplayPage() {
         </section>
 
         <section className="grid min-h-0 grid-rows-[var(--rows-right)] gap-[var(--gap)]">
-          {/* Card parent abu-abu (kolom ala Jira); isi pengumuman = child */}
+          {/* Gray parent card (Jira-style column); announcement content = child */}
           <div className="flex min-h-0 flex-col rounded-2xl bg-white/45 p-[var(--pad)] shadow-[0_8px_30px_-12px_rgba(6,78,59,0.25)] ring-1 ring-white/70">
             <PengumumanPanel items={data?.pengumuman} className="flex-1" />
           </div>

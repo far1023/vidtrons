@@ -6,10 +6,10 @@ import type { DisplayFeedData } from "@/types/display"
 
 const STORAGE_KEY = "bppddmi_display_feed_cache"
 /**
- * Polling hanya pengaman: perubahan data datang lewat Pusher. Polling tetap
- * perlu untuk mengambil presigned URL video baru (berganti harian) dan
- * menangkap event yang terlewat. Tiap panggilan = 1 edge request + 1
- * function invocation di Vercel, jadi interval dibuat panjang.
+ * Polling is only a safety net: data changes arrive via Pusher. Polling is still
+ * needed to fetch new video presigned URLs (rotated daily) and to
+ * catch missed events. Each call = 1 edge request + 1
+ * function invocation on Vercel, so the interval is kept long.
  */
 const POLL_INTERVAL_MS = 10 * 60_000
 
@@ -122,8 +122,8 @@ export function useDisplayData(options?: UseDisplayDataOptions) {
       let hasConnected = false
       pusher.connection.bind("connected", () => {
         console.log("[Pusher Client] Sukses terhubung ke Pusher server.")
-        // Sambungan ulang (bukan koneksi pertama): event selama terputus
-        // tidak diterima, jadi ambil data terbaru sekali.
+        // Reconnect (not the first connection): events during the disconnect
+        // were not received, so fetch the latest data once.
         if (hasConnected) void mutate()
         hasConnected = true
       })

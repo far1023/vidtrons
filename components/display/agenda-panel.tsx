@@ -24,7 +24,7 @@ function formatTime(timeStr: string): string {
   return timeStr ? timeStr.slice(0, 5) : "--:--"
 }
 
-/** Tanggal (angka) + bulan singkat untuk blok tanggal. Tanpa `tanggal` = hari ini (WIB). */
+/** Day number + short month for the date block. Without `tanggal` = today (WIB). */
 function dateParts(tanggal?: string): { day: string; month: string } {
   const m = tanggal?.match(/^(\d{4})-(\d{2})-(\d{2})/)
   const date = m ? new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])) : new Date()
@@ -41,8 +41,8 @@ function dateParts(tanggal?: string): { day: string; month: string } {
 }
 
 /**
- * Isi kartu agenda (child). Card parent disediakan oleh DisplayScreen,
- * jadi komponen ini hanya merender header + daftar agenda.
+ * Agenda card content (child). The parent Card is provided by DisplayScreen,
+ * so this component only renders the header + agenda list.
  */
 export function AgendaPanel({ items, className }: AgendaPanelProps) {
   const hasItems = Boolean(items && items.length > 0)
@@ -73,7 +73,7 @@ export function AgendaPanel({ items, className }: AgendaPanelProps) {
                   key={item.id ?? index}
                   className="grid w-full min-w-0 grid-cols-[clamp(2.75rem,3.2vw,4.5rem)_minmax(0,1fr)] items-start gap-2.5 overflow-hidden rounded-xl bg-white p-2.5 shadow-[0_1px_3px_rgba(16,24,40,0.08),0_8px_20px_-6px_rgba(16,24,40,0.14)] ring-1 ring-black/5 sm:gap-3 sm:p-3.5"
                 >
-                  {/* Blok tanggal: tile gradient emerald stick to top */}
+                  {/* Date block: emerald gradient tile stuck to the top */}
                   <div className="flex w-full min-w-0 shrink-0 flex-col items-center justify-center self-start rounded-xl bg-linear-to-br from-emerald-500 to-teal-600 px-1 py-2 leading-none text-white shadow-md shadow-emerald-600/25 sm:py-2.5">
                     <span className="text-[clamp(1.2rem,1.75vw,2.25rem)] font-black tracking-tight tabular-nums">
                       {day}

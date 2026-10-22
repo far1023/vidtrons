@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import type { LegacyColumnDef } from "@tanstack/react-table/legacy"
-import { ArrowDownRight, ArrowUpRight, Minus, TrendingUp } from "lucide-react"
+import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react"
 import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"

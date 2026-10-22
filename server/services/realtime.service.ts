@@ -9,9 +9,9 @@ import { revalidateDisplayCache } from "@/server/services/cache"
 import { getPanelFeed } from "@/server/services/display.service"
 
 /**
- * Batas ukuran pesan Pusher sekitar 10 KB. Jika payload lebih besar (misalnya
- * playlist video dengan presigned URL panjang), data dihilangkan dan layar
- * mengambil panel itu sendiri lewat /api/display?panel=...
+ * Pusher message size limit is about 10 KB. If the payload is larger (e.g.
+ * a video playlist with long presigned URLs), the data is omitted and the screen
+ * fetches that panel itself via /api/display?panel=...
  */
 const PUSHER_MAX_PAYLOAD_BYTES = 8_000
 

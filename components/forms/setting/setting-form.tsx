@@ -8,7 +8,6 @@ import {
   ImageIcon,
   Loader2,
   RefreshCw,
-  Save,
   Tv,
 } from "lucide-react"
 
@@ -31,7 +30,7 @@ export interface SettingsData {
 }
 
 export function SettingForm() {
-  const [data, setData] = React.useState<SettingsData | null>(null)
+  const [, setData] = React.useState<SettingsData | null>(null)
   const [isLoading, setIsLoading] = React.useState(true)
   const [isSaving, setIsSaving] = React.useState(false)
   const [isRefreshing, setIsRefreshing] = React.useState(false)

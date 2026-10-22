@@ -7,15 +7,15 @@ const S3_REGION = "kencana";
 const S3_BUCKET = "far1023s-bucket-ctkpuc";
 const S3_ENDPOINT = `https://${S3_HOST}`;
 
-/** Masa berlaku presigned URL (detik). 7 hari = batas maksimum SigV4. */
+/** Presigned URL lifetime (seconds). 7 days = SigV4 maximum. */
 const PRESIGN_EXPIRES_IN = 7 * 24 * 60 * 60;
 
 /**
- * Tanda tangan dibuat per jendela waktu ini, bukan per request, sehingga URL
- * video yang sama selalu identik selama satu jendela. Hasilnya cache browser
- * tetap efektif, dan pemutar video tidak mereset playlist tiap data di-refetch.
- * Karena expiry dihitung dari awal jendela, sisa masa berlaku minimal
- * (PRESIGN_EXPIRES_IN - PRESIGN_WINDOW_MS), yaitu 6 hari.
+ * Signatures are created per time window rather than per request, so the URL
+ * of a given video stays identical within one window. The browser cache
+ * remains effective and the video player does not reset its playlist on refetch.
+ * Since expiry is counted from the window start, the minimum remaining lifetime is
+ * (PRESIGN_EXPIRES_IN - PRESIGN_WINDOW_MS), i.e. 6 days.
  */
 const PRESIGN_WINDOW_MS = 24 * 60 * 60 * 1000;
 
@@ -33,12 +33,12 @@ function getClient(): S3Client {
   cachedClient = new S3Client({
     region: S3_REGION,
     endpoint: S3_ENDPOINT,
-    // Path-style (host/bucket/key), sama seperti URL yang dipakai sebelumnya
+    // Path-style (host/bucket/key), same as the URLs used previously
     forcePathStyle: true,
     credentials: { accessKeyId, secretAccessKey },
-    // Cegah SDK versi baru menambah parameter checksum ke URL (sering ditolak
-    // provider S3-compatible). Hapus 2 baris ini jika TypeScript mengeluh
-    // karena versi @aws-sdk/client-s3 Anda lebih lama.
+    // Prevent newer SDK versions from adding checksum params to the URL (often rejected by
+    // S3-compatible providers). Remove these 2 lines if TypeScript complains
+    // because your @aws-sdk/client-s3 version is older.
     requestChecksumCalculation: "WHEN_REQUIRED",
     responseChecksumValidation: "WHEN_REQUIRED",
   });
@@ -46,8 +46,8 @@ function getClient(): S3Client {
 }
 
 /**
- * Mengambil key objek dari URL bucket Cloudeka milik kita.
- * Mengembalikan null jika URL bukan milik bucket ini (misalnya video eksternal).
+ * Extracts the object key from a URL of our Cloudeka bucket.
+ * Returns null if the URL does not belong to this bucket (e.g. external video).
  */
 export function extractBucketKey(url: string): string | null {
   try {
@@ -63,7 +63,7 @@ export function extractBucketKey(url: string): string | null {
   }
 }
 
-/** Presigned GET URL, dihitung lokal (tanpa request jaringan ke S3). */
+/** Presigned GET URL, computed locally (no network request to S3). */
 async function createPresignedGetUrl(key: string): Promise<string> {
   const signingDate = new Date(
     Math.floor(Date.now() / PRESIGN_WINDOW_MS) * PRESIGN_WINDOW_MS
@@ -74,7 +74,7 @@ async function createPresignedGetUrl(key: string): Promise<string> {
     new GetObjectCommand({
       Bucket: S3_BUCKET,
       Key: key,
-      // Meminta S3 menyertakan header cache saat browser mengunduh video
+      // Ask S3 to include cache headers when the browser downloads the video
       ResponseCacheControl: "public, max-age=86400",
     }),
     { expiresIn: PRESIGN_EXPIRES_IN, signingDate }
@@ -82,11 +82,11 @@ async function createPresignedGetUrl(key: string): Promise<string> {
 }
 
 /**
- * Mengubah URL video menjadi URL yang bisa diputar langsung oleh browser.
- * - URL bucket Cloudeka privat -> presigned URL (byte video tidak lewat Vercel)
- * - URL lain -> dikembalikan apa adanya
- * Jika gagal menandatangani, URL asli dikembalikan agar feed tidak ikut gagal
- * (pemutar akan melewati video yang error).
+ * Converts a video URL into one the browser can play directly.
+ * - Private Cloudeka bucket URL -> presigned URL (video bytes bypass Vercel)
+ * - Any other URL -> returned as is
+ * If signing fails, the original URL is returned so the feed does not fail
+ * (the player will skip the broken video).
  */
 export async function resolveVideoUrl(url: string): Promise<string> {
   const key = extractBucketKey(url);

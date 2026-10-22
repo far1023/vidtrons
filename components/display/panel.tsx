@@ -4,9 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 
 /**
- * Display panel: shadcn Card dengan gaya modern (rounded besar, ring tipis,
- * bayangan lembut berwarna emerald). Tanpa backdrop-blur agar aman dari
- * GPU flicker di layar signage 24/7.
+ * Display panel: shadcn Card with a modern style (large rounding, thin ring,
+ * soft emerald-colored shadow). No backdrop-blur to stay safe from
+ * GPU flicker on 24/7 signage screens.
  */
 export function Panel({ className, ...props }: ComponentProps<typeof Card>) {
   return (

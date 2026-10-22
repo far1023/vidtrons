@@ -30,7 +30,7 @@ function hostOf(url: string) {
   }
 }
 
-/** Cuplikan frame pertama (hanya metadata yang diunduh, bukan seluruh file). */
+/** First-frame thumbnail (only metadata is downloaded, not the whole file). */
 function Thumbnail({ url }: { url: string }) {
   const [failed, setFailed] = React.useState(false)
   const src = url.includes("#") ? url : `${url}#t=0.1`

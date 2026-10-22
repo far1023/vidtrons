@@ -5,21 +5,21 @@ import { buildGrafikMakro, type GrafikMakro } from "@/lib/makro-ekonomi"
 import * as makroEkonomiModel from "@/server/models/makro-ekonomi.model"
 
 async function fetchGrafik(): Promise<GrafikMakro | null> {
-  // Mengambil seluruh baris data lintas tahun (termasuk riwayat tahun-tahun sebelumnya)
+  // Fetch all rows across years (including previous years' history)
   const rows = await makroEkonomiModel.all()
   return buildGrafikMakro(rows)
 }
 
 /**
- * Memakai DISPLAY_CACHE_TAG yang sama dengan layar lobi, sehingga
- * revalidasi tag setelah admin mengubah data otomatis menyegarkan halaman ini.
+ * Uses the same DISPLAY_CACHE_TAG as the lobby display, so
+ * tag revalidation after an admin changes data also refreshes this page.
  */
 const getCachedGrafik = unstable_cache(fetchGrafik, ["grafik-makro-ekonomi"], {
   tags: [DISPLAY_CACHE_TAG],
 })
 
 export async function getGrafikMakroEkonomi(): Promise<GrafikMakro | null> {
-  // Saat development selalu ambil data segar
+  // Always fetch fresh data in development
   if (process.env.NODE_ENV === "development") return fetchGrafik()
   return getCachedGrafik()
 }

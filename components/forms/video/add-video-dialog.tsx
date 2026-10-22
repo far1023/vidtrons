@@ -57,7 +57,7 @@ export function AddVideoDialog({
     })
   }
 
-  // Cegah dialog tertutup (klik luar / Esc) saat data sedang dikirim
+  // Prevent the dialog from closing (outside click / Esc) while data is being submitted
   const handleOpenChange = (next: boolean) => {
     if (isSubmitting && !next) return
     onOpenChange(next)

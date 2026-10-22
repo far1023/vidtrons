@@ -70,8 +70,8 @@ export function toDisplayResource(data: {
       gambarUrl: pr.gambarUrl,
       urutan: pr.urutan,
     })),
-    // URL asli disimpan apa adanya; presigned URL dibuat di display.service
-    // (di luar cache) lewat resolveVideoUrl.
+    // The original URL is stored as is; the presigned URL is created in display.service
+    // (outside the cache) via resolveVideoUrl.
     video: data.videos.map((v) => ({
       id: v.id,
       judul: v.judul,

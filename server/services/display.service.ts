@@ -13,9 +13,9 @@ import { toDisplayResource, type DisplayFeedData } from "@/server/resources/disp
 import { resolveVideoUrl } from "@/server/services/s3.service";
 
 /**
- * Menandatangani URL video bucket privat. Dilakukan di LUAR unstable_cache
- * (cache hanya menyimpan URL asli), supaya presigned URL tidak ikut tersimpan
- * lalu kedaluwarsa di dalam cache.
+ * Signs private bucket video URLs. Done OUTSIDE unstable_cache
+ * (the cache only stores original URLs), so presigned URLs are not stored
+ * and then expire inside the cache.
  */
 async function signVideos<T extends { url: string }>(videos: T[]): Promise<T[]> {
   return Promise.all(
@@ -91,7 +91,7 @@ async function loadDisplayFeed(): Promise<DisplayFeedData> {
 
 export async function getDisplayFeed(): Promise<DisplayFeedData> {
   const feed = await loadDisplayFeed();
-  // Spread membuat objek baru, jadi data di dalam cache tidak termutasi
+  // Spread creates a new object, so cached data is not mutated
   return { ...feed, video: await signVideos(feed.video) };
 }
 

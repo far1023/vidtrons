@@ -4,7 +4,6 @@ import * as React from "react"
 import { toast } from "sonner"
 import { CalendarIcon, Clock, Loader2, MapPin } from "lucide-react"
 import { format } from "date-fns"
-import { id as idLocale } from "date-fns/locale"
 
 import {
   Dialog,

@@ -18,7 +18,7 @@ export function QrMakroEkonomiCard() {
   const [isSaving, setIsSaving] = React.useState(false)
   const [previewError, setPreviewError] = React.useState(false)
 
-  // Generate QR Code default yang mengarah ke /grafik-makro-ekonomi
+  // Generate the default QR Code pointing to /grafik-makro-ekonomi
   React.useEffect(() => {
     const targetUrl =
       typeof window !== "undefined"

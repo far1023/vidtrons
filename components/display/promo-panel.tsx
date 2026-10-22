@@ -36,13 +36,13 @@ export type PromoPanelProps = {
 
 type ImageStatus = "loading" | "loaded" | "error"
 
-/** Lebar maksimum gambar yang diminta dari Google (cukup untuk panel ini). */
+/** Max image width requested from Google (enough for this panel). */
 const MAX_IMAGE_WIDTH = 1200
 
 /**
- * `=s0` pada lh3.googleusercontent.com berarti "ukuran asli" (bisa belasan MB).
- * Itu lambat di-download dan berat di-decode pada perangkat signage, sehingga
- * slide sempat kosong. Ganti ke lebar tetap yang cukup untuk panel.
+ * `=s0` on lh3.googleusercontent.com means "original size" (can be tens of MB).
+ * That is slow to download and heavy to decode on signage devices, so the
+ * slide could stay blank. Replace it with a fixed width sufficient for the panel.
  */
 function optimizeMediaUrl(url: string) {
   return url.replace(
@@ -52,9 +52,9 @@ function optimizeMediaUrl(url: string) {
 }
 
 /**
- * Gambar satu slide. Menyimpan status sendiri, mencoba ulang otomatis bila
- * gagal (backoff 5s -> 60s, atau segera saat koneksi pulih), dan tidak pernah
- * menghapus slide dari carousel.
+ * Image of a single slide. Keeps its own status, retries automatically on
+ * failure (backoff 5s -> 60s, or immediately when the connection recovers), and never
+ * removes the slide from the carousel.
  */
 function PromoSlideImage({
   item,
@@ -76,7 +76,7 @@ function PromoSlideImage({
     [item.gambarUrl, onStatus]
   )
 
-  // Laporkan status awal agar autoplay tahu slide ini belum siap
+  // Report the initial status so autoplay knows this slide is not ready yet
   useEffect(() => {
     onStatus(item.gambarUrl, "loading")
   }, [item.gambarUrl, onStatus])
@@ -87,7 +87,7 @@ function PromoSlideImage({
         retriesRef.current = 0
         update("loaded")
       }
-      // "Siap" berarti sudah di-decode, bukan sekadar terunduh
+      // "Ready" means decoded, not merely downloaded
       if (typeof img.decode === "function") img.decode().then(done, done)
       else done()
     },
@@ -111,7 +111,7 @@ function PromoSlideImage({
     }
   }, [status, retry])
 
-  // Tangani gambar yang sudah selesai dimuat sebelum handler terpasang (cache)
+  // Handle images that finished loading before the handler was attached (cache)
   const imgRef = useCallback(
     (el: HTMLImageElement | null) => {
       if (!el || !el.complete) return
@@ -174,7 +174,7 @@ export function PromoPanel({
     statusRef.current[url] = status
   }, [])
 
-  // Jumlah slide dijaga stabil: slide tidak lagi dibuang saat gambar gagal.
+  // The slide count is kept stable: slides are no longer dropped when an image fails.
   const slides: (PromoItem | null)[] = (() => {
     const valid = (items ?? []).filter((item) => item.gambarUrl)
     if (valid.length) return valid
@@ -192,15 +192,15 @@ export function PromoPanel({
   const slidesRef = useRef(slides)
   slidesRef.current = slides
 
-  // Loop Embla butuh slide yang cukup banyak; untuk sedikit slide pakai rewind
+  // Embla loop needs enough slides; with few slides use rewind
   const canLoop = slides.length >= perView + 2
   const opts = useMemo(
     () => ({ loop: canLoop, align: "start" as const }),
     [canLoop]
   )
 
-  // Autoplay: hanya geser ke slide yang gambarnya sudah siap, supaya tidak
-  // pernah menampilkan slide kosong. Slide gagal/sedang dimuat dilewati.
+  // Autoplay: only advance to slides whose image is ready, so a blank slide is
+  // never shown. Failed/loading slides are skipped.
   useEffect(() => {
     if (!api || slides.length <= 1) return
 
@@ -231,14 +231,14 @@ export function PromoPanel({
           return
         }
       }
-      // Tidak ada slide lain yang siap: tetap di slide saat ini
+      // No other slide is ready: stay on the current slide
     }, intervalSeconds * 1000)
 
     return () => clearInterval(timer)
   }, [api, slides.length, intervalSeconds])
 
-  // Tab/layar kembali aktif: hitung ulang posisi (timer & animasi ditahan
-  // browser saat tab tersembunyi sehingga posisi carousel bisa tidak sinkron)
+  // Tab/screen active again: recompute position (timers & animations are paused by the
+  // browser while the tab is hidden, so the carousel position can go out of sync)
   useEffect(() => {
     if (!api) return
     const handleVisible = () => {

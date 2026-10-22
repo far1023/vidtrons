@@ -33,7 +33,7 @@ function formatDate(dateStr: string): string {
   }
 }
 
-/** Pilih teks putih/gelap supaya label tetap terbaca di atas warna kategori apa pun. */
+/** Pick white/dark text so the label stays readable on any category color. */
 function contrastText(hex: string): string {
   let h = hex.replace("#", "")
   if (h.length === 3)
@@ -50,8 +50,8 @@ function contrastText(hex: string): string {
 }
 
 /**
- * Isi kolom (child). Card parent disediakan oleh DisplayScreen.
- * Kartu pengumuman: putih bersih, label kategori berbentuk pill berwarna.
+ * Column content (child). The parent Card is provided by DisplayScreen.
+ * Announcement card: clean white, category label as a colored pill.
  */
 export function PengumumanPanel({ items, className }: PengumumanPanelProps) {
   const hasItems = Boolean(items && items.length > 0)

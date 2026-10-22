@@ -98,12 +98,12 @@ export function MakroEkonomiPanel({
   const [defaultQrDataUrl, setDefaultQrDataUrl] = useState<string | null>(null)
   const displayItems = items && items.length > 0 ? items : DEFAULT_ITEMS
 
-  // Reset qrError saat prop qrUrl berubah
+  // Reset qrError when the qrUrl prop changes
   useEffect(() => {
     setQrError(false)
   }, [qrUrl])
 
-  // Generate QR code default ke /grafik-makro-ekonomi menggunakan library qrcode
+  // Generate the default QR code for /grafik-makro-ekonomi using the qrcode library
   useEffect(() => {
     const targetUrl =
       typeof window !== "undefined"
@@ -125,8 +125,8 @@ export function MakroEkonomiPanel({
       })
   }, [])
 
-  // Jika user sudah pernah input manual di DB (qrUrl), gunakan dari DB.
-  // Jika tidak ada atau error, gunakan hasil generate default.
+  // If a QR URL was entered manually in the DB (qrUrl), use the one from the DB.
+  // If missing or errored, use the generated default.
   const effectiveQr = qrUrl && !qrError ? qrUrl : defaultQrDataUrl
   const labelText = qrLabel || (qrUrl ? "Pindai Data" : "Grafik Makro")
 
@@ -161,7 +161,7 @@ export function MakroEkonomiPanel({
         </div>
       </div>
 
-      {/* QR Code 1:1 di sisi kanan */}
+      {/* 1:1 QR Code on the right side */}
       <div
         className="relative flex aspect-square h-full shrink-0 flex-col items-center justify-center overflow-hidden rounded-2xl bg-white p-2 shadow-xs ring-1 ring-emerald-950/10"
         title={labelText}
@@ -210,9 +210,9 @@ const TREN_STYLES: Record<MakroEkonomiItem["tren"], TrenStyle> = {
 }
 
 /**
- * Satu indikator tanpa card: judul kecil, nilai besar, panah tren berwarna di
- * samping nilai. Garis tipis di ujung kanan memisahkan antar indikator
- * (termasuk di sambungan loop, jadi marquee tetap rapi).
+ * A single indicator without a card: small title, large value, colored trend arrow
+ * beside the value. A thin line on the right edge separates indicators
+ * (including at the loop seam, so the marquee stays tidy).
  */
 function IndicatorItem({ item }: { item: MakroEkonomiItem }) {
   const tren = TREN_STYLES[item.tren]
