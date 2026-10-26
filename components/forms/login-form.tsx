@@ -32,6 +32,7 @@ export function LoginForm({
   const [email, setEmail] = React.useState("")
   const [password, setPassword] = React.useState("")
   const [isLoading, setIsLoading] = React.useState(false)
+  const [isRedirecting, setIsRedirecting] = React.useState(false)
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -51,7 +52,9 @@ export function LoginForm({
         setErrorMessage(
           "Email atau kata sandi tidak valid. Silakan periksa kembali."
         )
+        setIsLoading(false)
       } else {
+        setIsRedirecting(true)
         router.push(callbackUrl)
         router.refresh()
       }
@@ -59,7 +62,6 @@ export function LoginForm({
       setErrorMessage(
         "Terjadi kesalahan saat mencoba masuk. Silakan coba lagi."
       )
-    } finally {
       setIsLoading(false)
     }
   }
@@ -99,7 +101,7 @@ export function LoginForm({
                   autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  disabled={isLoading}
+                  disabled={isLoading || isRedirecting}
                   required
                 />
               </Field>
@@ -113,7 +115,7 @@ export function LoginForm({
                   autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  disabled={isLoading}
+                  disabled={isLoading || isRedirecting}
                   required
                 />
               </Field>
@@ -122,12 +124,12 @@ export function LoginForm({
                 <Button
                   type="submit"
                   className="w-full font-semibold"
-                  disabled={isLoading}
+                  disabled={isLoading || isRedirecting}
                 >
-                  {isLoading ? (
+                  {isLoading || isRedirecting ? (
                     <>
                       <Loader2Icon className="mr-2 size-4 animate-spin" />
-                      Memverifikasi...
+                      {isRedirecting ? "Mengalihkan..." : "Memverifikasi..."}
                     </>
                   ) : (
                     "Masuk ke Admin"
