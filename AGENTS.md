@@ -13,6 +13,11 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 Digital information display for the office lobby TV (16:9, landscape, passive/non-touch), plus an admin panel for staff to manage content.
 
+## Anti-slop (always apply)
+
+- Before any task, read and follow the `antislop` core skill. Also load the matching sub-skill: `antislop-ui` for UI work, `antislop-code` for code and comments, `antislop-copywriting` for text, `antislop-human` for accessibility, `antislop-layoutmobile` for responsive layouts.
+- Project rules in this file take precedence if they conflict with a skill.
+
 ## Docs (read before starting work)
 
 - Layout plan (design and behavior, in Indonesian; legacy Laravel-era plan, updated to match the Next.js decisions): `docs/LAYOUT.md`
