@@ -232,3 +232,7 @@ pm run build lulus; API diuji (buat, duplikat 409, validasi 422, ubah, hapus 204
   - Memperbarui label labels.agenda.kosong di lib/labels.ts menjadi 'Tidak ada agenda untuk 7 hari ke depan'.
   - Menambahkan suppressHydrationWarning pada teks jam, hari, tanggal, dan countdown di components/display/waktu-panel.tsx untuk mencegah mismatch hidrasi waktu render server-client.
   - Verifikasi: npm run typecheck dan npm run build sukses 100% tanpa error.
+
+- Pengumuman statis pengingat SKP (permintaan user):
+  - `lib/skp-reminder.ts` (`buildSkpReminder`): bukan data database. Memakai tanggal di `DASHBOARD_TIMEZONE`. 5 hari terakhir bulan menampilkan pengingat input SKP periode bulan berjalan; tanggal 1 sampai 5 menampilkan pengingat periode bulan sebelumnya (Januari mengacu ke Desember tahun lalu). Di luar jendela itu tidak tampil. Jumlah hari diatur lewat `SKP_END_OF_MONTH_DAYS` dan `SKP_START_OF_MONTH_DAYS`.
+  - Teks di `lib/labels.ts` (`labels.skp`). Item disisipkan paling atas daftar di `app/(display)/lobby/page.tsx`, kategori "Pengingat".

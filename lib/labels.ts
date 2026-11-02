@@ -40,6 +40,13 @@ export const labels = {
     judul: "Pengumuman",
     kosong: "Belum ada pengumuman aktif saat ini",
   },
+  skp: {
+    kategori: "Pengingat",
+    akhirBulan:
+      "Memasuki akhir bulan, jangan tunda input kinerja serta lengkapi bukti dukung",
+    awalBulan: (periode: string) =>
+      `Awal bulan baru, segera input kinerja periode ${periode} serta lengkapi bukti dukung`,
+  },
   agenda: {
     judul: "Agenda Kegiatan",
     kosong: "Tidak ada agenda untuk 7 hari ke depan",

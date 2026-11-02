@@ -14,6 +14,8 @@ import { useDisplayData } from "@/hooks/use-display-data"
 import { useMidnightRefresh } from "@/hooks/use-midnight-refresh"
 import { usePrayerWeather } from "@/hooks/use-prayer-weather"
 import { buildAirQualityAdvisory } from "@/lib/air-quality"
+import { buildSkpReminder } from "@/lib/skp-reminder"
+import { useMemo } from "react"
 
 // Client component: only NEXT_PUBLIC_* env vars are available here.
 const pusherKey = process.env.NEXT_PUBLIC_PUSHER_KEY || ""
@@ -24,6 +26,12 @@ export default function DisplayPage() {
   useMidnightRefresh()
   const { data } = useDisplayData({ pusherKey, pusherCluster })
   const prayerWeather = usePrayerWeather()
+  // The page reloads at midnight, so the reminder window is re-evaluated daily.
+  const skpReminder = useMemo(() => buildSkpReminder(), [])
+  const pengumumanItems = useMemo(
+    () => (skpReminder ? [skpReminder, ...(data?.pengumuman ?? [])] : data?.pengumuman),
+    [skpReminder, data?.pengumuman]
+  )
 
   return (
     <div className="relative isolate grid h-screen w-screen grid-rows-[var(--rows-screen)] overflow-hidden bg-[#fff9f4] text-[var(--c-text)]">
@@ -62,7 +70,7 @@ export default function DisplayPage() {
         <section className="grid min-h-0 grid-rows-[var(--rows-right)] gap-[var(--gap)]">
           {/* Gray parent card (Jira-style column); announcement content = child */}
           <div className="flex min-h-0 flex-col rounded-2xl bg-white/45 p-[var(--pad)] shadow-[0_8px_30px_-12px_rgba(6,78,59,0.25)] ring-1 ring-white/70">
-            <PengumumanPanel items={data?.pengumuman} className="flex-1" />
+            <PengumumanPanel items={pengumumanItems} className="flex-1" />
           </div>
           {/* Card parent putih; isi agenda = child */}
           <div className="flex min-h-0 flex-col overflow-hidden rounded-2xl bg-white/80 py-[var(--pad)] shadow-[0_8px_30px_-12px_rgba(6,78,59,0.25)] ring-1 ring-black/5">
