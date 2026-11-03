@@ -33,6 +33,7 @@ export default function Page() {
                 src="/images/logos.png"
                 alt="Logo Bappeda Kota Dumai"
                 fill
+                sizes="(min-width: 640px) 176px, 144px"
                 priority
                 className="object-contain object-left"
               />

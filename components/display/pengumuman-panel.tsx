@@ -60,11 +60,6 @@ export function PengumumanPanel({ items, className }: PengumumanPanelProps) {
     <div className={cn("flex min-h-0 flex-col", className)}>
       <header className="flex items-center gap-2 px-1 pb-4 text-[clamp(0.85rem,1.05vw,1.2rem)] font-bold tracking-wide text-muted-foreground uppercase">
         <span className="truncate">{labels.pengumuman.judul}</span>
-        {hasItems && (
-          <span className="rounded-full bg-emerald-600 px-2.5 py-0.5 text-[0.9em] font-bold text-white tabular-nums">
-            {items!.length}
-          </span>
-        )}
       </header>
 
       <Autoscroll className="min-h-0 flex-1">

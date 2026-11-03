@@ -56,11 +56,6 @@ export function AgendaPanel({ items, className }: AgendaPanelProps) {
     >
       <header className="flex min-w-0 items-center gap-2 px-[var(--pad)] pb-3 text-[clamp(0.8rem,1vw,1.15rem)] font-bold tracking-wide text-muted-foreground uppercase sm:pb-4">
         <span className="truncate">{labels.agenda.judul}</span>
-        {hasItems && (
-          <span className="shrink-0 rounded-full bg-emerald-600 px-2 py-0.5 text-[0.85em] font-bold text-white tabular-nums sm:px-2.5">
-            {items!.length}
-          </span>
-        )}
       </header>
 
       <Autoscroll className="min-h-0 w-full min-w-0 flex-1 overflow-x-hidden">
