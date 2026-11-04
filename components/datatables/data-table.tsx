@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { Switch } from "@/components/ui/switch"
 import {
   Select,
   SelectContent,
@@ -360,7 +361,7 @@ export function DataTable<TData extends Record<string, any>>({
               size="sm"
               onClick={() => table.previousPage()}
               disabled={!table.getCanPreviousPage()}
-              className="h-8 gap-1 px-2.5 text-xs"
+              className="h-8 cursor-pointer gap-1 px-2.5 text-xs"
             >
               <ChevronLeft className="size-3.5" />
               Sebelumnya
@@ -376,7 +377,7 @@ export function DataTable<TData extends Record<string, any>>({
                   }
                   size="sm"
                   onClick={() => table.setPageIndex(idx)}
-                  className={`size-8 p-0 text-xs ${
+                  className={`size-8 cursor-pointer p-0 text-xs ${
                     table.getState().pagination.pageIndex === idx
                       ? "bg-emerald-600 text-white hover:bg-emerald-700"
                       : ""
@@ -391,7 +392,7 @@ export function DataTable<TData extends Record<string, any>>({
               size="sm"
               onClick={() => table.nextPage()}
               disabled={!table.getCanNextPage()}
-              className="h-8 gap-1 px-2.5 text-xs"
+              className="h-8 cursor-pointer gap-1 px-2.5 text-xs"
             >
               Selanjutnya
               <ChevronRight className="size-3.5" />
@@ -456,6 +457,65 @@ export function createStatusColumn<
           >
             {isActive ? "Aktif" : "Nonaktif"}
           </Badge>
+        </div>
+      )
+    },
+  }
+}
+
+/**
+ * Status column with an inline switch. The parent owns the update (optimistic
+ * PATCH + rollback); `isPending` disables the switch while a request is in flight.
+ */
+export function createToggleStatusColumn<
+  TData extends Record<string, any> = Record<string, any>,
+>(options: {
+  accessorKey: keyof TData & string
+  onToggle: (item: TData, next: boolean) => void
+  isPending?: (item: TData) => boolean
+  headerTitle?: string
+  itemLabel?: (item: TData) => string
+}): LegacyColumnDef<TData, any> {
+  const {
+    accessorKey,
+    onToggle,
+    isPending,
+    headerTitle = "Status",
+    itemLabel,
+  } = options
+  return {
+    accessorKey,
+    header: () => (
+      <div className="text-center font-semibold">{headerTitle}</div>
+    ),
+    cell: (info) => {
+      const item = info.row.original as TData
+      const isActive = Boolean(info.getValue())
+      const label = itemLabel?.(item)
+      return (
+        <div className="flex items-center justify-center gap-2">
+          <Switch
+            size="default"
+            checked={isActive}
+            disabled={isPending?.(item) ?? false}
+            onCheckedChange={(next) => onToggle(item, next)}
+            className="cursor-pointer"
+            aria-label={
+              label
+                ? `${isActive ? "Nonaktifkan" : "Aktifkan"} ${label}`
+                : isActive
+                  ? "Nonaktifkan"
+                  : "Aktifkan"
+            }
+          />
+          <span
+            className={cn(
+              "w-14 text-xs",
+              isActive ? "font-medium text-emerald-700" : "text-muted-foreground"
+            )}
+          >
+            {isActive ? "Aktif" : "Nonaktif"}
+          </span>
         </div>
       )
     },

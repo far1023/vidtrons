@@ -9,7 +9,7 @@ import { toast } from "sonner"
 import {
   DataTable,
   createIndexColumn,
-  createStatusColumn,
+  createToggleStatusColumn,
   createDateColumn,
   createActionColumn,
   STATUS_FILTER_OPTIONS,
@@ -64,6 +64,47 @@ export function VideoTable() {
   React.useEffect(() => {
     fetchData()
   }, [fetchData])
+
+  // Inline status toggle: optimistic update, rolled back if the request fails
+  const [pendingIds, setPendingIds] = React.useState<Set<number>>(new Set())
+
+  const handleToggleStatus = React.useCallback(
+    async (item: VideoItem, next: boolean) => {
+      const setActive = (value: boolean) =>
+        setData((prev) =>
+          prev.map((row) =>
+            row.id === item.id ? { ...row, isActive: value } : row
+          )
+        )
+      const setPending = (value: boolean) =>
+        setPendingIds((prev) => {
+          const copy = new Set(prev)
+          if (value) copy.add(item.id)
+          else copy.delete(item.id)
+          return copy
+        })
+
+      setPending(true)
+      setActive(next)
+      try {
+        const res = await fetch(`/api/admin/video/${item.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ isActive: next }),
+        })
+        if (!res.ok) throw new Error("Gagal mengubah status video")
+        toast.success(next ? "Video diaktifkan" : "Video dinonaktifkan")
+      } catch (err: unknown) {
+        setActive(item.isActive)
+        toast.error(
+          err instanceof Error ? err.message : "Gagal mengubah status"
+        )
+      } finally {
+        setPending(false)
+      }
+    },
+    []
+  )
 
   // Filter client-side
   const filteredData = React.useMemo(() => {
@@ -138,7 +179,12 @@ export function VideoTable() {
           </div>
         ),
       },
-      createStatusColumn<VideoItem>("isActive"),
+      createToggleStatusColumn<VideoItem>({
+        accessorKey: "isActive",
+        onToggle: handleToggleStatus,
+        isPending: (item) => pendingIds.has(item.id),
+        itemLabel: (item) => item.judul,
+      }),
       createDateColumn<VideoItem>("createdAt", "Dibuat", false),
       createActionColumn<VideoItem>({
         onEdit: (item) => {
@@ -153,7 +199,7 @@ export function VideoTable() {
         deleteLabel: "Hapus Video",
       }),
     ],
-    []
+    [handleToggleStatus, pendingIds]
   )
 
   return (

@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import {
   DataTable,
   createIndexColumn,
-  createStatusColumn,
+  createToggleStatusColumn,
   createActionColumn,
   STATUS_FILTER_OPTIONS,
 } from "./data-table"
@@ -62,6 +62,49 @@ export function MakroEkonomiTable() {
   React.useEffect(() => {
     fetchData()
   }, [fetchData])
+
+  // Inline status toggle: optimistic update, rolled back if the request fails
+  const [pendingIds, setPendingIds] = React.useState<Set<number>>(new Set())
+
+  const handleToggleStatus = React.useCallback(
+    async (item: MakroEkonomiItem, next: boolean) => {
+      const setActive = (value: boolean) =>
+        setData((prev) =>
+          prev.map((row) =>
+            row.id === item.id ? { ...row, isActive: value } : row
+          )
+        )
+      const setPending = (value: boolean) =>
+        setPendingIds((prev) => {
+          const copy = new Set(prev)
+          if (value) copy.add(item.id)
+          else copy.delete(item.id)
+          return copy
+        })
+
+      setPending(true)
+      setActive(next)
+      try {
+        const res = await fetch(`/api/admin/makro-ekonomi/${item.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ isActive: next }),
+        })
+        if (!res.ok) throw new Error("Gagal mengubah status indikator")
+        toast.success(
+          next ? "Indikator diaktifkan" : "Indikator dinonaktifkan"
+        )
+      } catch (err: unknown) {
+        setActive(item.isActive)
+        toast.error(
+          err instanceof Error ? err.message : "Gagal mengubah status"
+        )
+      } finally {
+        setPending(false)
+      }
+    },
+    []
+  )
 
   // Filter Data
   const filteredData = React.useMemo(() => {
@@ -192,7 +235,12 @@ export function MakroEkonomiTable() {
           </div>
         ),
       },
-      createStatusColumn<MakroEkonomiItem>("isActive"),
+      createToggleStatusColumn<MakroEkonomiItem>({
+        accessorKey: "isActive",
+        onToggle: handleToggleStatus,
+        isPending: (item) => pendingIds.has(item.id),
+        itemLabel: (item) => item.judul,
+      }),
       createActionColumn<MakroEkonomiItem>({
         onEdit: (item) => {
           setItemToEdit(item)
@@ -206,7 +254,7 @@ export function MakroEkonomiTable() {
         deleteLabel: "Hapus Indikator",
       }),
     ]
-  }, [])
+  }, [handleToggleStatus, pendingIds])
 
   const hasActiveFilters = searchQuery !== "" || statusFilter !== "all"
 

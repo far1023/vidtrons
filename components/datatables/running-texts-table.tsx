@@ -8,7 +8,7 @@ import { toast } from "sonner"
 import {
   DataTable,
   createIndexColumn,
-  createStatusColumn,
+  createToggleStatusColumn,
   createDateColumn,
   createActionColumn,
   STATUS_FILTER_OPTIONS,
@@ -64,6 +64,49 @@ export function RunningTextsTable() {
     fetchData()
   }, [fetchData])
 
+  // Inline status toggle: optimistic update, rolled back if the request fails
+  const [pendingIds, setPendingIds] = React.useState<Set<number>>(new Set())
+
+  const handleToggleStatus = React.useCallback(
+    async (item: RunningTextItem, next: boolean) => {
+      const setActive = (value: boolean) =>
+        setData((prev) =>
+          prev.map((row) =>
+            row.id === item.id ? { ...row, isActive: value } : row
+          )
+        )
+      const setPending = (value: boolean) =>
+        setPendingIds((prev) => {
+          const copy = new Set(prev)
+          if (value) copy.add(item.id)
+          else copy.delete(item.id)
+          return copy
+        })
+
+      setPending(true)
+      setActive(next)
+      try {
+        const res = await fetch(`/api/admin/running-text/${item.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ isActive: next }),
+        })
+        if (!res.ok) throw new Error("Gagal mengubah status teks berjalan")
+        toast.success(
+          next ? "Teks berjalan diaktifkan" : "Teks berjalan dinonaktifkan"
+        )
+      } catch (err: unknown) {
+        setActive(item.isActive)
+        toast.error(
+          err instanceof Error ? err.message : "Gagal mengubah status"
+        )
+      } finally {
+        setPending(false)
+      }
+    },
+    []
+  )
+
   // Filter client-side
   const filteredData = React.useMemo(() => {
     return data.filter((item) => {
@@ -116,7 +159,12 @@ export function RunningTextsTable() {
           </div>
         ),
       },
-      createStatusColumn<RunningTextItem>("isActive"),
+      createToggleStatusColumn<RunningTextItem>({
+        accessorKey: "isActive",
+        onToggle: handleToggleStatus,
+        isPending: (item) => pendingIds.has(item.id),
+        itemLabel: (item) => item.isi,
+      }),
       createDateColumn<RunningTextItem>("createdAt", "Dibuat", true),
       createActionColumn<RunningTextItem>({
         onEdit: (item) => {
@@ -131,7 +179,7 @@ export function RunningTextsTable() {
         deleteLabel: "Hapus Teks",
       }),
     ],
-    []
+    [handleToggleStatus, pendingIds]
   )
 
   return (

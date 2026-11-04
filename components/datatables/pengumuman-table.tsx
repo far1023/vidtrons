@@ -10,7 +10,7 @@ import { toast } from "sonner"
 import {
   DataTable,
   createIndexColumn,
-  createStatusColumn,
+  createToggleStatusColumn,
   createDateColumn,
   createActionColumn,
   STATUS_FILTER_OPTIONS,
@@ -86,6 +86,49 @@ export function PengumumanTable() {
     fetchData()
     fetchKategori()
   }, [fetchData, fetchKategori])
+
+  // Inline status toggle: optimistic update, rolled back if the request fails
+  const [pendingIds, setPendingIds] = React.useState<Set<number>>(new Set())
+
+  const handleToggleStatus = React.useCallback(
+    async (item: PengumumanItem, next: boolean) => {
+      const setActive = (value: boolean) =>
+        setData((prev) =>
+          prev.map((row) =>
+            row.id === item.id ? { ...row, isActive: value } : row
+          )
+        )
+      const setPending = (value: boolean) =>
+        setPendingIds((prev) => {
+          const copy = new Set(prev)
+          if (value) copy.add(item.id)
+          else copy.delete(item.id)
+          return copy
+        })
+
+      setPending(true)
+      setActive(next)
+      try {
+        const res = await fetch(`/api/admin/pengumuman/${item.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ isActive: next }),
+        })
+        if (!res.ok) throw new Error("Gagal mengubah status pengumuman")
+        toast.success(
+          next ? "Pengumuman diaktifkan" : "Pengumuman dinonaktifkan"
+        )
+      } catch (err: unknown) {
+        setActive(item.isActive)
+        toast.error(
+          err instanceof Error ? err.message : "Gagal mengubah status"
+        )
+      } finally {
+        setPending(false)
+      }
+    },
+    []
+  )
 
   // Filter client-side
   const filteredData = React.useMemo(() => {
@@ -165,7 +208,12 @@ export function PengumumanTable() {
           )
         },
       },
-      createStatusColumn<PengumumanItem>("isActive"),
+      createToggleStatusColumn<PengumumanItem>({
+        accessorKey: "isActive",
+        onToggle: handleToggleStatus,
+        isPending: (item) => pendingIds.has(item.id),
+        itemLabel: (item) => item.judul,
+      }),
       createDateColumn<PengumumanItem>("createdAt", "Dibuat", false),
       createActionColumn<PengumumanItem>({
         onEdit: (item) => {
@@ -180,7 +228,7 @@ export function PengumumanTable() {
         deleteLabel: "Hapus Pengumuman",
       }),
     ],
-    []
+    [handleToggleStatus, pendingIds]
   )
 
   const kategoriFilterOptions = React.useMemo(() => {

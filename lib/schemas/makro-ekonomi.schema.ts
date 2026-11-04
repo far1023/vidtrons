@@ -46,7 +46,44 @@ export const makroEkonomiSchema = z.object({
 });
 
 export const createMakroEkonomiSchema = makroEkonomiSchema;
-export const updateMakroEkonomiSchema = makroEkonomiSchema.partial();
+export const updateMakroEkonomiSchema = z.object({
+  judul: z
+    .string()
+    .trim()
+    .min(1, "Nama indikator tidak boleh kosong")
+    .max(100, "Nama indikator maksimal 100 karakter")
+    .optional(),
+  nilai: z
+    .string()
+    .trim()
+    .min(1, "Nilai indikator tidak boleh kosong")
+    .max(50, "Nilai maksimal 50 karakter")
+    .optional(),
+  satuan: z
+    .string()
+    .trim()
+    .max(20, "Satuan maksimal 20 karakter")
+    .optional(),
+  tahun: z
+    .string()
+    .trim()
+    .min(1, "Tahun/periode tidak boleh kosong")
+    .max(20, "Tahun/periode maksimal 20 karakter")
+    .optional(),
+  tren: z
+    .enum(["naik_positif", "turun_positif", "turun_negatif", "naik_negatif", "tetap", "naik", "turun"], {
+      error: () => "Tren harus salah satu dari: naik_positif, turun_positif, turun_negatif, naik_negatif, atau tetap",
+    })
+    .optional(),
+  urutan: z
+    .number({
+      error: () => "Urutan harus berupa bilangan bulat",
+    })
+    .int()
+    .min(0, "Urutan minimal 0")
+    .optional(),
+  isActive: z.boolean().optional(),
+});
 
 export type CreateMakroEkonomiInput = z.infer<typeof createMakroEkonomiSchema>;
 export type UpdateMakroEkonomiInput = z.infer<typeof updateMakroEkonomiSchema>;
