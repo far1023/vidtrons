@@ -1,25 +1,49 @@
+import { Suspense } from "react"
 import type { Metadata } from "next"
 import Image from "next/image"
 import Link from "next/link"
 import { ArrowLeft, TrendingUp } from "lucide-react"
 
 import { LobbyBackground } from "@/components/display/lobby-background"
-import { IndikatorChartCard } from "@/components/makro/indikator-chart-card"
+import { MakroChartsView } from "@/components/makro/makro-charts-view"
 import { buttonVariants } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { getGrafikMakroEkonomi } from "@/server/services/grafik-makro-ekonomi.service"
+import {
+  DEFAULT_WILAYAH_KODE,
+  resolveRegionsFromWilayahParam,
+} from "@/lib/makro-ekonomi"
+import { getGrafikMakroMulti } from "@/server/services/grafik-makro-ekonomi.service"
+import { getActiveRegions } from "@/server/services/region.service"
 
 export const metadata: Metadata = {
   title: "Grafik Makro Ekonomi - Bappeda Kota Dumai",
   description:
-    "Perkembangan indikator utama pembangunan Kota Dumai selama lima tahun terakhir dalam bentuk grafik.",
+    "Perkembangan indikator utama pembangunan Kota Dumai dan wilayah pembanding selama lima tahun terakhir dalam bentuk grafik.",
 }
 
 // Data is still cached via unstable_cache; the page is not prerendered at build time
 export const dynamic = "force-dynamic"
 
-export default async function GrafikMakroEkonomiPage() {
-  const data = await getGrafikMakroEkonomi()
+type PageProps = {
+  searchParams?: Promise<{ wilayah?: string | string[] }>
+}
+
+export default async function GrafikMakroEkonomiPage({
+  searchParams,
+}: PageProps) {
+  const resolvedParams = searchParams ? await searchParams : {}
+  const rawWilayah = Array.isArray(resolvedParams.wilayah)
+    ? resolvedParams.wilayah.join(",")
+    : (resolvedParams.wilayah ?? null)
+
+  const activeRegions = await getActiveRegions()
+  const selectedRegions = resolveRegionsFromWilayahParam(
+    rawWilayah,
+    activeRegions,
+    DEFAULT_WILAYAH_KODE
+  )
+  const regionIds = selectedRegions.map((r) => r.id)
+
+  const data = await getGrafikMakroMulti({ regionIds })
   const indikator = data?.indikator ?? []
 
   return (
@@ -45,7 +69,6 @@ export default async function GrafikMakroEkonomiPage() {
             />
           </div>
 
-          {/* Change href if the screen selection portal is on another route */}
           <Link
             href="/"
             className={buttonVariants({ variant: "outline", size: "sm" })}
@@ -73,19 +96,13 @@ export default async function GrafikMakroEkonomiPage() {
           )}
         </div>
 
-        {indikator.length > 0 ? (
-          <div className="mt-8 grid gap-4 sm:mt-10 md:grid-cols-2 xl:grid-cols-3">
-            {indikator.map((item) => (
-              <IndikatorChartCard key={item.judul} indikator={item} />
-            ))}
-          </div>
-        ) : (
-          <Card className="mx-auto mt-8 max-w-md sm:mt-10">
-            <CardContent className="py-10 text-center text-sm text-muted-foreground">
-              Data makro ekonomi belum tersedia.
-            </CardContent>
-          </Card>
-        )}
+        <Suspense fallback={null}>
+          <MakroChartsView
+            initialData={data}
+            availableRegions={activeRegions}
+            initialWilayahParam={rawWilayah}
+          />
+        </Suspense>
       </div>
 
       <footer className="border-t border-emerald-950/5 bg-background/60 py-4 text-center text-xs text-muted-foreground">

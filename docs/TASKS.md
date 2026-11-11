@@ -32,3 +32,13 @@ Layout comes first: T1 to T5 build and verify the component skeleton (see `docs/
 - [x] T17. Admin CRUD through the backend layers (BACKEND.md): Promo, Video, PANDU, Pengaturan with URL fields (same shadcn set; https validation, image/video preview in the form); call `revalidateTag` on every save
 - [x] T18. 24/7 hardening: timer cleanup audit, leave running for hours, broken media URL handling (on error, skip the item), kiosk mode and auto-start notes
 - [x] T19. Deploy to Vercel: region close to Indonesia (Singapore) for both Vercel functions and the Neon project, environment variables, `.env.example`, backup notes for the database and a list of where media is hosted; check Neon compute usage after a few days
+
+## Makro ekonomi per wilayah (lihat docs/MAKRO-REGION.md)
+
+- [x] T20. Migrasi: tabel regions + seed Kemendagri, kolom makro_ekonomi.region_id (nullable, backfill, lalu NOT NULL), unique (region_id, judul, tahun)
+- [x] T21. Backend regions + perluasan model/service makro dengan regionIds
+- [x] T22. GET /api/makro multi-wilayah (cache bertag) + buildGrafikMakro multi-seri
+- [x] T23. use-makro-data + refactor IndikatorChartCard multi-seri, warna per wilayah, legenda
+- [x] T24. RegionFilter + query string + wilayah bawaan display
+- [x] T25. Admin: halaman Wilayah (warna) + form Makro dengan wilayah
+- [x] T26. Verifikasi: build, 1 vs 5 wilayah, data kosong, cek query Neon

@@ -8,6 +8,7 @@ import {
   Film,
   ImageIcon,
   LayoutDashboard,
+  MapPin,
   Megaphone,
   MessageSquareText,
   Settings,
@@ -63,6 +64,11 @@ const data = {
       title: "Makro Ekonomi",
       url: "/makro-ekonomi",
       icon: TrendingUp,
+    },
+    {
+      title: "Wilayah Makro",
+      url: "/wilayah",
+      icon: MapPin,
     },
     {
       title: "Pengaturan",

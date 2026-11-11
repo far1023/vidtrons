@@ -1,5 +1,6 @@
 import { config } from "dotenv"
 import bcrypt from "bcryptjs"
+import { eq, isNotNull } from "drizzle-orm"
 
 import { createDb } from "./client"
 import * as schema from "./schema"
@@ -14,14 +15,18 @@ config({ path: ".env.local" })
 
 async function main() {
   if (process.env.DB_SEED_ALLOWED !== "true") {
-    throw new Error("Refusing to seed: set DB_SEED_ALLOWED=true in .env.local (dev only)")
+    throw new Error(
+      "Refusing to seed: set DB_SEED_ALLOWED=true in .env.local (dev only)"
+    )
   }
   const url = process.env.DATABASE_URL
   if (!url) throw new Error("DATABASE_URL is not set (see .env.example)")
 
   const db = createDb(url)
   const timeZone = process.env.DASHBOARD_TIMEZONE ?? "Asia/Jakarta"
-  const today = new Intl.DateTimeFormat("en-CA", { timeZone }).format(new Date())
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone }).format(
+    new Date()
+  )
 
   // Children first because of foreign keys.
   await db.delete(schema.pengumuman)
@@ -31,6 +36,12 @@ async function main() {
   await db.delete(schema.runningText)
   await db.delete(schema.video)
   await db.delete(schema.makroEkonomi)
+  // Unlink self-referencing parentId on regions before deleting all regions.
+  await db
+    .update(schema.regions)
+    .set({ parentId: null })
+    .where(isNotNull(schema.regions.parentId))
+  await db.delete(schema.regions)
   await db.delete(schema.setting)
   await db.delete(schema.user)
 
@@ -49,7 +60,8 @@ async function main() {
       kategoriId: kategori[0].id,
     },
     {
-      judul: "Contoh pengumuman penting dengan judul yang cukup panjang agar membungkus ke beberapa baris",
+      judul:
+        "Contoh pengumuman penting dengan judul yang cukup panjang agar membungkus ke beberapa baris",
       tanggal: today,
       kategoriId: kategori[1].id,
     },
@@ -73,15 +85,29 @@ async function main() {
   ])
 
   await db.insert(schema.promo).values([
-    { judul: "Promo contoh 1", gambarUrl: "https://placehold.co/1080x1350/png?text=Promo+1", urutan: 1 },
-    { judul: "Promo contoh 2", gambarUrl: "https://placehold.co/1080x1350/png?text=Promo+2", urutan: 2 },
-    { judul: "Promo contoh 3", gambarUrl: "https://placehold.co/1080x1350/png?text=Promo+3", urutan: 3 },
+    {
+      judul: "Promo contoh 1",
+      gambarUrl: "https://placehold.co/1080x1350/png?text=Promo+1",
+      urutan: 1,
+    },
+    {
+      judul: "Promo contoh 2",
+      gambarUrl: "https://placehold.co/1080x1350/png?text=Promo+2",
+      urutan: 2,
+    },
+    {
+      judul: "Promo contoh 3",
+      gambarUrl: "https://placehold.co/1080x1350/png?text=Promo+3",
+      urutan: 3,
+    },
   ])
 
-  await db.insert(schema.runningText).values([
-    { isi: "Contoh teks berjalan pertama" },
-    { isi: "Contoh teks berjalan kedua" },
-  ])
+  await db
+    .insert(schema.runningText)
+    .values([
+      { isi: "Contoh teks berjalan pertama" },
+      { isi: "Contoh teks berjalan kedua" },
+    ])
 
   await db.insert(schema.video).values([
     {
@@ -91,63 +117,111 @@ async function main() {
     },
   ])
 
-  await db.insert(schema.makroEkonomi).values([
-    {
-      judul: "Pertumbuhan Ekonomi",
-      nilai: "5,21",
-      satuan: "%",
-      tahun: "2024",
-      tren: "naik_positif",
-      urutan: 1,
-    },
-    {
-      judul: "Inflasi Tahunan",
-      nilai: "2,14",
-      satuan: "%",
-      tahun: "2024",
-      tren: "turun_positif",
-      urutan: 2,
-    },
-    {
-      judul: "Indeks Pembangunan Manusia (IPM)",
-      nilai: "76,40",
-      satuan: "Poin",
-      tahun: "2024",
-      tren: "naik_positif",
-      urutan: 3,
-    },
-    {
-      judul: "Tingkat Pengangguran Terbuka (TPT)",
-      nilai: "5,82",
-      satuan: "%",
-      tahun: "2024",
-      tren: "turun_positif",
-      urutan: 4,
-    },
-    {
-      judul: "Tingkat Kemiskinan",
-      nilai: "3,11",
-      satuan: "%",
-      tahun: "2024",
-      tren: "turun_positif",
-      urutan: 5,
-    },
-    {
-      judul: "PDRB ADHB",
-      nilai: "128,5",
-      satuan: "Triliun Rp",
-      tahun: "2024",
-      tren: "naik_positif",
-      urutan: 6,
-    },
-  ])
+  // Seed regions: Nasional (00), Provinsi Riau (14), and 12 kabupaten/kota in Riau (Kemendagri codes).
+  const [nasional] = await db
+    .insert(schema.regions)
+    .values({
+      kode: "00",
+      nama: "Nasional",
+      level: "nasional",
+      parentId: null,
+      warna: "#b91c1c",
+    })
+    .returning()
+
+  const [riau] = await db
+    .insert(schema.regions)
+    .values({
+      kode: "14",
+      nama: "Provinsi Riau",
+      level: "provinsi",
+      parentId: nasional.id,
+      warna: "#1d4ed8",
+    })
+    .returning()
+
+  const kabKotaRows = await db
+    .insert(schema.regions)
+    .values(
+      [
+        { kode: "14.71", nama: "Kota Pekanbaru", warna: null },
+        { kode: "14.72", nama: "Kota Dumai", warna: "#059669" },
+      ].map((r) => ({
+        ...r,
+        level: "kabkota" as const,
+        parentId: riau.id,
+      }))
+    )
+    .returning()
+
+  const dumai = kabKotaRows.find((r) => r.kode === "14.72")
+  if (!dumai) {
+    throw new Error("Region 14.72 (Kota Dumai) missing after seed")
+  }
+
+  await db.insert(schema.makroEkonomi).values(
+    [
+      {
+        judul: "Pertumbuhan Ekonomi",
+        nilai: "5,21",
+        satuan: "%",
+        tahun: "2024",
+        tren: "naik_positif",
+        urutan: 1,
+      },
+      {
+        judul: "Inflasi Tahunan",
+        nilai: "2,14",
+        satuan: "%",
+        tahun: "2024",
+        tren: "turun_positif",
+        urutan: 2,
+      },
+      {
+        judul: "Indeks Pembangunan Manusia (IPM)",
+        nilai: "76,40",
+        satuan: "Poin",
+        tahun: "2024",
+        tren: "naik_positif",
+        urutan: 3,
+      },
+      {
+        judul: "Tingkat Pengangguran Terbuka (TPT)",
+        nilai: "5,82",
+        satuan: "%",
+        tahun: "2024",
+        tren: "turun_positif",
+        urutan: 4,
+      },
+      {
+        judul: "Tingkat Kemiskinan",
+        nilai: "3,11",
+        satuan: "%",
+        tahun: "2024",
+        tren: "turun_positif",
+        urutan: 5,
+      },
+      {
+        judul: "PDRB ADHB",
+        nilai: "128,5",
+        satuan: "Triliun Rp",
+        tahun: "2024",
+        tren: "naik_positif",
+        urutan: 6,
+      },
+    ].map((row) => ({ ...row, regionId: dumai.id }))
+  )
 
   await db.insert(schema.setting).values([
     { key: "namaInstansi", value: "Bappeda" },
     { key: "slogan", value: "Contoh slogan instansi" },
     { key: "logoUrl", value: "https://placehold.co/200x200/png?text=Logo" },
-    { key: "makroQrUrl", value: "https://placehold.co/400x400/png?text=QR+Makro" },
+    {
+      key: "makroQrUrl",
+      value: "https://placehold.co/400x400/png?text=QR+Makro",
+    },
     { key: "makroQrLabel", value: "Satu Data Kota Dumai" },
+    { key: "makroWilayahDefault", value: "14.72" },
   ])
 
   const adminEmail = process.env.ADMIN_EMAIL

@@ -24,14 +24,23 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { updateMakroEkonomiSchema } from "@/lib/schemas/makro-ekonomi.schema"
+import type { ResolvedRegionInfo } from "@/lib/makro-ekonomi"
 
 export interface MakroEkonomiItem {
   id: number
+  regionId: number
   judul: string
   nilai: string
   satuan: string
   tahun: string
-  tren: "naik_positif" | "turun_positif" | "turun_negatif" | "naik_negatif" | "tetap" | "naik" | "turun"
+  tren:
+    | "naik_positif"
+    | "turun_positif"
+    | "turun_negatif"
+    | "naik_negatif"
+    | "tetap"
+    | "naik"
+    | "turun"
   urutan: number
   isActive: boolean
   createdAt: string
@@ -42,6 +51,7 @@ interface EditMakroEkonomiDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   item: MakroEkonomiItem | null
+  regions: ResolvedRegionInfo[]
   onRefresh: () => Promise<void> | void
 }
 
@@ -49,8 +59,10 @@ export function EditMakroEkonomiDialog({
   open,
   onOpenChange,
   item,
+  regions,
   onRefresh,
 }: EditMakroEkonomiDialogProps) {
+  const [regionId, setRegionId] = React.useState("")
   const [judul, setJudul] = React.useState("")
   const [nilai, setNilai] = React.useState("")
   const [satuan, setSatuan] = React.useState("%")
@@ -63,6 +75,7 @@ export function EditMakroEkonomiDialog({
 
   React.useEffect(() => {
     if (item && open) {
+      setRegionId(item.regionId ? String(item.regionId) : "")
       setJudul(item.judul)
       setNilai(item.nilai)
       setSatuan(item.satuan || "%")
@@ -80,7 +93,11 @@ export function EditMakroEkonomiDialog({
     }
   }, [item, open])
 
-  const isFormValid = judul.trim().length > 0 && nilai.trim().length > 0 && tahun.trim().length > 0
+  const isFormValid =
+    regionId.trim().length > 0 &&
+    judul.trim().length > 0 &&
+    nilai.trim().length > 0 &&
+    tahun.trim().length > 0
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -88,6 +105,7 @@ export function EditMakroEkonomiDialog({
     setErrors({})
 
     const payload = {
+      regionId: parseInt(regionId, 10),
       judul: judul.trim(),
       nilai: nilai.trim(),
       satuan: satuan.trim() || "%",
@@ -118,7 +136,9 @@ export function EditMakroEkonomiDialog({
 
       const json = await res.json()
       if (!res.ok) {
-        throw new Error(json.error?.message || "Gagal memperbarui data indikator")
+        throw new Error(
+          json.error?.message || "Gagal memperbarui data indikator"
+        )
       }
 
       toast.success("Indikator makro ekonomi berhasil diperbarui")
@@ -139,11 +159,65 @@ export function EditMakroEkonomiDialog({
           <DialogHeader>
             <DialogTitle>Edit Indikator Makro Ekonomi</DialogTitle>
             <DialogDescription>
-              Perbarui data indikator makro ekonomi Kota Dumai.
+              indikator makro ekonomi berdasarkan wilayah dan periode.
             </DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-region-id">Wilayah *</Label>
+              <Select
+                value={regionId}
+                onValueChange={(val) => {
+                  if (val) setRegionId(val)
+                }}
+              >
+                <SelectTrigger
+                  id="edit-region-id"
+                  className={`w-full ${errors.regionId ? "border-destructive" : ""}`}
+                >
+                  <SelectValue placeholder="Pilih wilayah">
+                    {(val: string | null) => {
+                      if (!val) return "Pilih wilayah"
+                      const found = regions.find((r) => String(r.id) === val)
+                      if (!found) return val
+                      return (
+                        <span className="flex items-center gap-2">
+                          <span
+                            className="inline-block size-2.5 shrink-0 rounded-full"
+                            style={{ backgroundColor: found.warna }}
+                          />
+                          <span>{found.nama}</span>
+                          <span className="text-xs text-muted-foreground">
+                            ({found.kode})
+                          </span>
+                        </span>
+                      )
+                    }}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {regions.map((r) => (
+                    <SelectItem key={r.id} value={String(r.id)}>
+                      <span className="flex items-center gap-2">
+                        <span
+                          className="inline-block size-2.5 shrink-0 rounded-full"
+                          style={{ backgroundColor: r.warna }}
+                        />
+                        <span>{r.nama}</span>
+                        <span className="text-xs text-muted-foreground">
+                          ({r.kode})
+                        </span>
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.regionId && (
+                <p className="text-xs text-destructive">{errors.regionId}</p>
+              )}
+            </div>
+
             <div className="space-y-1.5">
               <Label htmlFor="edit-judul">Nama Indikator *</Label>
               <Input
@@ -153,9 +227,15 @@ export function EditMakroEkonomiDialog({
                 placeholder="Contoh: Pertumbuhan Ekonomi atau Tingkat Pengangguran Terbuka"
                 maxLength={100}
                 aria-invalid={!!errors.judul}
-                className={errors.judul ? "border-destructive focus-visible:ring-destructive" : ""}
+                className={
+                  errors.judul
+                    ? "border-destructive focus-visible:ring-destructive"
+                    : ""
+                }
               />
-              {errors.judul && <p className="text-xs text-destructive">{errors.judul}</p>}
+              {errors.judul && (
+                <p className="text-xs text-destructive">{errors.judul}</p>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -170,7 +250,9 @@ export function EditMakroEkonomiDialog({
                   aria-invalid={!!errors.nilai}
                   className={errors.nilai ? "border-destructive" : ""}
                 />
-                {errors.nilai && <p className="text-xs text-destructive">{errors.nilai}</p>}
+                {errors.nilai && (
+                  <p className="text-xs text-destructive">{errors.nilai}</p>
+                )}
               </div>
 
               <div className="space-y-1.5">
@@ -197,7 +279,9 @@ export function EditMakroEkonomiDialog({
                   aria-invalid={!!errors.tahun}
                   className={errors.tahun ? "border-destructive" : ""}
                 />
-                {errors.tahun && <p className="text-xs text-destructive">{errors.tahun}</p>}
+                {errors.tahun && (
+                  <p className="text-xs text-destructive">{errors.tahun}</p>
+                )}
               </div>
 
               <div className="space-y-1.5">
@@ -215,7 +299,12 @@ export function EditMakroEkonomiDialog({
 
             <div className="space-y-1.5">
               <Label htmlFor="edit-tren">Tren Indikator</Label>
-              <Select value={tren} onValueChange={(val) => { if (val) setTren(val) }}>
+              <Select
+                value={tren}
+                onValueChange={(val) => {
+                  if (val) setTren(val)
+                }}
+              >
                 <SelectTrigger id="edit-tren" className="w-full">
                   <SelectValue placeholder="Pilih tren" />
                 </SelectTrigger>
@@ -223,42 +312,58 @@ export function EditMakroEkonomiDialog({
                   <SelectItem value="naik_positif">
                     <div className="flex items-center gap-2 text-emerald-700">
                       <ArrowUpRight className="size-4 shrink-0" />
-                      <span className="font-medium">Naik — Positif / Baik (e.g. Pertumbuhan Ekonomi, IPM, PDRB)</span>
+                      <span className="font-medium">
+                        Naik: Positif / Baik (misal Pertumbuhan Ekonomi, IPM,
+                        PDRB)
+                      </span>
                     </div>
                   </SelectItem>
                   <SelectItem value="turun_positif">
                     <div className="flex items-center gap-2 text-emerald-700">
                       <ArrowDownRight className="size-4 shrink-0" />
-                      <span className="font-medium">Turun — Membaik / Positif (e.g. Pengangguran/TPT, Kemiskinan)</span>
+                      <span className="font-medium">
+                        Turun: Membaik / Positif (misal Pengangguran/TPT,
+                        Kemiskinan)
+                      </span>
                     </div>
                   </SelectItem>
                   <SelectItem value="turun_negatif">
                     <div className="flex items-center gap-2 text-rose-700">
                       <ArrowDownRight className="size-4 shrink-0" />
-                      <span className="font-medium">Turun — Buruk / Negatif (e.g. Pertumbuhan Ekonomi turun)</span>
+                      <span className="font-medium">
+                        Turun: Buruk / Negatif (misal Pertumbuhan Ekonomi turun)
+                      </span>
                     </div>
                   </SelectItem>
                   <SelectItem value="naik_negatif">
                     <div className="flex items-center gap-2 text-rose-700">
                       <ArrowUpRight className="size-4 shrink-0" />
-                      <span className="font-medium">Naik — Waspada / Negatif (e.g. Pengangguran / Kemiskinan naik)</span>
+                      <span className="font-medium">
+                        Naik: Waspada / Negatif (misal Pengangguran / Kemiskinan
+                        naik)
+                      </span>
                     </div>
                   </SelectItem>
                   <SelectItem value="tetap">
                     <div className="flex items-center gap-2 text-slate-700">
                       <Minus className="size-4 shrink-0" />
-                      <span className="font-medium">Stabil / Tetap (▬)</span>
+                      <span className="font-medium">Stabil / Tetap</span>
                     </div>
                   </SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-[11px] text-muted-foreground leading-relaxed">
-                Catatan: Untuk indikator seperti Tingkat Pengangguran Terbuka (TPT) atau Kemiskinan, tren turun merupakan capaian baik/positif (ditampilkan dengan warna hijau).
+              <p className="text-[11px] leading-relaxed text-muted-foreground">
+                Catatan: Untuk indikator seperti Tingkat Pengangguran Terbuka
+                (TPT) atau Kemiskinan, tren turun merupakan capaian baik/positif
+                (ditampilkan dengan warna hijau).
               </p>
             </div>
 
             <div className="flex items-center justify-between rounded-lg border p-2.5">
-              <Label htmlFor="edit-is-active" className="text-sm font-medium cursor-pointer">
+              <Label
+                htmlFor="edit-is-active"
+                className="cursor-pointer text-sm font-medium"
+              >
                 Status Aktif
               </Label>
               <Switch
@@ -279,7 +384,9 @@ export function EditMakroEkonomiDialog({
               Batal
             </Button>
             <Button type="submit" disabled={!isFormValid || isSubmitting}>
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isSubmitting && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
               Simpan Perubahan
             </Button>
           </DialogFooter>

@@ -39,6 +39,12 @@ export const updateSettingsSchema = z.object({
   logoUrl: httpsUrlOptional,
   makroQrUrl: httpsUrlOptional,
   makroQrLabel: z.string().trim().max(100, "Keterangan QR maksimal 100 karakter").nullable().optional(),
+  makroWilayahDefault: z
+    .string()
+    .trim()
+    .max(50, "Kode wilayah default maksimal 50 karakter")
+    .nullable()
+    .optional(),
 });
 
 export type UpdateSettingsInput = z.infer<typeof updateSettingsSchema>;

@@ -4,12 +4,22 @@ import { validateIdParam, type RouteContext } from "@/server/requests/base";
 import {
   parseStoreMakroEkonomiRequest,
   parseUpdateMakroEkonomiRequest,
+  parseGrafikMakroRequest,
 } from "@/server/requests/makro-ekonomi.request";
 import * as makroEkonomiService from "@/server/services/makro-ekonomi.service";
+import * as grafikMakroService from "@/server/services/grafik-makro-ekonomi.service";
 import {
   toMakroEkonomiResource,
   toMakroEkonomiCollection,
+  toGrafikMakroMultiResource,
 } from "@/server/resources/makro-ekonomi.resource";
+
+/** Public: multi-region macro chart data (`GET /api/makro`). */
+export async function publicGrafik(request: Request): Promise<Response> {
+  const query = parseGrafikMakroRequest(request);
+  const data = await grafikMakroService.getGrafikMakroMulti(query);
+  return ok(toGrafikMakroMultiResource(data));
+}
 
 export async function index(_request: Request): Promise<Response> {
   const items = await makroEkonomiService.getAllMakroEkonomi();

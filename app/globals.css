@@ -86,6 +86,16 @@
   --c-badge: #ecfdf5; /* Emerald Haze: badges and pills */
   --c-band: #064e3b; /* Deep Emerald: header and running text */
   --c-on-band: #ffffff; /* text on --c-band */
+
+  /* Fallback palette for region chart series (docs/MAKRO-REGION.md section 6) */
+  --chart-region-1: #059669; /* emerald-600 */
+  --chart-region-2: #1d4ed8; /* blue-700 */
+  --chart-region-3: #b91c1c; /* red-700 */
+  --chart-region-4: #d97706; /* amber-600 */
+  --chart-region-5: #7c3aed; /* violet-600 */
+  --chart-region-6: #0e7490; /* cyan-700 */
+  --chart-region-7: #be185d; /* pink-700 */
+  --chart-region-8: #4338ca; /* indigo-700 */
 }
 
 /* Display layout tokens (docs/LAYOUT.md section 3). Never redefine --radius: shadcn owns it. */

@@ -24,18 +24,29 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { createMakroEkonomiSchema } from "@/lib/schemas/makro-ekonomi.schema"
+import { DEFAULT_WILAYAH_KODE, type ResolvedRegionInfo } from "@/lib/makro-ekonomi"
 
 interface AddMakroEkonomiDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  regions: ResolvedRegionInfo[]
   onRefresh: () => Promise<void> | void
 }
 
 export function AddMakroEkonomiDialog({
   open,
   onOpenChange,
+  regions,
   onRefresh,
 }: AddMakroEkonomiDialogProps) {
+  const defaultRegionId = React.useMemo(() => {
+    const dumai = regions.find(
+      (r) => r.kode.toLowerCase() === DEFAULT_WILAYAH_KODE.toLowerCase()
+    )
+    return (dumai?.id ?? regions[0]?.id)?.toString() ?? ""
+  }, [regions])
+
+  const [regionId, setRegionId] = React.useState("")
   const [judul, setJudul] = React.useState("")
   const [nilai, setNilai] = React.useState("")
   const [satuan, setSatuan] = React.useState("%")
@@ -48,6 +59,7 @@ export function AddMakroEkonomiDialog({
 
   React.useEffect(() => {
     if (open) {
+      setRegionId(defaultRegionId)
       setJudul("")
       setNilai("")
       setSatuan("%")
@@ -57,15 +69,20 @@ export function AddMakroEkonomiDialog({
       setIsActive(true)
       setErrors({})
     }
-  }, [open])
+  }, [open, defaultRegionId])
 
-  const isFormValid = judul.trim().length > 0 && nilai.trim().length > 0 && tahun.trim().length > 0
+  const isFormValid =
+    regionId.trim().length > 0 &&
+    judul.trim().length > 0 &&
+    nilai.trim().length > 0 &&
+    tahun.trim().length > 0
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrors({})
 
     const payload = {
+      regionId: parseInt(regionId, 10),
       judul: judul.trim(),
       nilai: nilai.trim(),
       satuan: satuan.trim() || "%",
@@ -117,11 +134,59 @@ export function AddMakroEkonomiDialog({
           <DialogHeader>
             <DialogTitle>Tambah Indikator Makro Ekonomi</DialogTitle>
             <DialogDescription>
-              Tambahkan indikator makro ekonomi Kota Dumai untuk ditampilkan pada carousel videotron.
+              Tambahkan data indikator makro ekonomi berdasarkan wilayah dan tahun untuk ditampilkan pada halaman grafik serta videotron.
             </DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="region-id">Wilayah *</Label>
+              <Select
+                value={regionId}
+                onValueChange={(val) => {
+                  if (val) setRegionId(val)
+                }}
+              >
+                <SelectTrigger
+                  id="region-id"
+                  className={`w-full ${errors.regionId ? "border-destructive" : ""}`}
+                >
+                  <SelectValue placeholder="Pilih wilayah">
+                    {(val: string | null) => {
+                      if (!val) return "Pilih wilayah"
+                      const found = regions.find((r) => String(r.id) === val)
+                      if (!found) return val
+                      return (
+                        <span className="flex items-center gap-2">
+                          <span
+                            className="inline-block size-2.5 shrink-0 rounded-full"
+                            style={{ backgroundColor: found.warna }}
+                          />
+                          <span>{found.nama}</span>
+                          <span className="text-xs text-muted-foreground">({found.kode})</span>
+                        </span>
+                      )
+                    }}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {regions.map((r) => (
+                    <SelectItem key={r.id} value={String(r.id)}>
+                      <span className="flex items-center gap-2">
+                        <span
+                          className="inline-block size-2.5 shrink-0 rounded-full"
+                          style={{ backgroundColor: r.warna }}
+                        />
+                        <span>{r.nama}</span>
+                        <span className="text-xs text-muted-foreground">({r.kode})</span>
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.regionId && <p className="text-xs text-destructive">{errors.regionId}</p>}
+            </div>
+
             <div className="space-y-1.5">
               <Label htmlFor="judul">Nama Indikator *</Label>
               <Input
@@ -201,31 +266,31 @@ export function AddMakroEkonomiDialog({
                   <SelectItem value="naik_positif">
                     <div className="flex items-center gap-2 text-emerald-700">
                       <ArrowUpRight className="size-4 shrink-0" />
-                      <span className="font-medium">Naik — Positif / Baik (e.g. Pertumbuhan Ekonomi, IPM, PDRB)</span>
+                      <span className="font-medium">Naik: Positif / Baik (misal Pertumbuhan Ekonomi, IPM, PDRB)</span>
                     </div>
                   </SelectItem>
                   <SelectItem value="turun_positif">
                     <div className="flex items-center gap-2 text-emerald-700">
                       <ArrowDownRight className="size-4 shrink-0" />
-                      <span className="font-medium">Turun — Membaik / Positif (e.g. Pengangguran/TPT, Kemiskinan)</span>
+                      <span className="font-medium">Turun: Membaik / Positif (misal Pengangguran/TPT, Kemiskinan)</span>
                     </div>
                   </SelectItem>
                   <SelectItem value="turun_negatif">
                     <div className="flex items-center gap-2 text-rose-700">
                       <ArrowDownRight className="size-4 shrink-0" />
-                      <span className="font-medium">Turun — Buruk / Negatif (e.g. Pertumbuhan Ekonomi turun)</span>
+                      <span className="font-medium">Turun: Buruk / Negatif (misal Pertumbuhan Ekonomi turun)</span>
                     </div>
                   </SelectItem>
                   <SelectItem value="naik_negatif">
                     <div className="flex items-center gap-2 text-rose-700">
                       <ArrowUpRight className="size-4 shrink-0" />
-                      <span className="font-medium">Naik — Waspada / Negatif (e.g. Pengangguran / Kemiskinan naik)</span>
+                      <span className="font-medium">Naik: Waspada / Negatif (misal Pengangguran / Kemiskinan naik)</span>
                     </div>
                   </SelectItem>
                   <SelectItem value="tetap">
                     <div className="flex items-center gap-2 text-slate-700">
                       <Minus className="size-4 shrink-0" />
-                      <span className="font-medium">Stabil / Tetap (▬)</span>
+                      <span className="font-medium">Stabil / Tetap</span>
                     </div>
                   </SelectItem>
                 </SelectContent>

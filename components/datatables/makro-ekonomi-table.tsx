@@ -21,14 +21,21 @@ import {
 } from "../forms/makro-ekonomi/edit-makro-ekonomi-dialog"
 import { DeleteMakroEkonomiDialog } from "../forms/makro-ekonomi/delete-makro-ekonomi-dialog"
 import { QrMakroEkonomiCard } from "../forms/makro-ekonomi/qr-makro-ekonomi-card"
+import {
+  resolveRegionColors,
+  type RegionInfo,
+  type ResolvedRegionInfo,
+} from "@/lib/makro-ekonomi"
 
 export function MakroEkonomiTable() {
   const [data, setData] = React.useState<MakroEkonomiItem[]>([])
+  const [regions, setRegions] = React.useState<ResolvedRegionInfo[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
   const [isRefreshing, setIsRefreshing] = React.useState(false)
 
   // Filters
   const [searchQuery, setSearchQuery] = React.useState("")
+  const [regionFilter, setRegionFilter] = React.useState<string>("all")
   const [statusFilter, setStatusFilter] = React.useState<"all" | "active" | "inactive">("all")
 
   // Dialogs
@@ -44,12 +51,21 @@ export function MakroEkonomiTable() {
     else setIsRefreshing(true)
 
     try {
-      const res = await fetch("/api/admin/makro-ekonomi")
-      if (!res.ok) {
+      const [makroRes, regionsRes] = await Promise.all([
+        fetch("/api/admin/makro-ekonomi"),
+        fetch("/api/admin/regions"),
+      ])
+      if (!makroRes.ok) {
         throw new Error("Gagal mengambil data makro ekonomi")
       }
-      const json = await res.json()
-      setData(json.data || [])
+      const makroJson = await makroRes.json()
+      setData(makroJson.data || [])
+
+      if (regionsRes.ok) {
+        const regionsJson = await regionsRes.json()
+        const rawRegions: RegionInfo[] = regionsJson.data || []
+        setRegions(resolveRegionColors(rawRegions))
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Gagal memuat data"
       toast.error(message)
@@ -62,6 +78,10 @@ export function MakroEkonomiTable() {
   React.useEffect(() => {
     fetchData()
   }, [fetchData])
+
+  const regionById = React.useMemo(() => {
+    return new Map(regions.map((r) => [r.id, r]))
+  }, [regions])
 
   // Inline status toggle: optimistic update, rolled back if the request fails
   const [pendingIds, setPendingIds] = React.useState<Set<number>>(new Set())
@@ -109,25 +129,72 @@ export function MakroEkonomiTable() {
   // Filter Data
   const filteredData = React.useMemo(() => {
     return data.filter((item) => {
+      const region = regionById.get(item.regionId)
+      const q = searchQuery.toLowerCase()
       const matchSearch =
         searchQuery === "" ||
-        item.judul.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.tahun.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.nilai.toLowerCase().includes(searchQuery.toLowerCase())
+        item.judul.toLowerCase().includes(q) ||
+        item.tahun.toLowerCase().includes(q) ||
+        item.nilai.toLowerCase().includes(q) ||
+        Boolean(region?.nama.toLowerCase().includes(q)) ||
+        Boolean(region?.kode.toLowerCase().includes(q))
+
+      const matchRegion =
+        regionFilter === "all" || String(item.regionId) === regionFilter
 
       const matchStatus =
         statusFilter === "all" ||
         (statusFilter === "active" && item.isActive) ||
         (statusFilter === "inactive" && !item.isActive)
 
-      return matchSearch && matchStatus
+      return matchSearch && matchRegion && matchStatus
     })
-  }, [data, searchQuery, statusFilter])
+  }, [data, regionById, searchQuery, regionFilter, statusFilter])
+
+  const regionFilterOptions = React.useMemo(() => {
+    return [
+      { label: "Semua Wilayah", value: "all" },
+      ...regions.map((r) => ({
+        label: `${r.nama} (${r.kode})`,
+        value: String(r.id),
+      })),
+    ]
+  }, [regions])
 
   // Columns definition
   const columns = React.useMemo<LegacyColumnDef<MakroEkonomiItem>[]>(() => {
     return [
       createIndexColumn<MakroEkonomiItem>(),
+      {
+        accessorKey: "regionId",
+        header: () => <div className="font-semibold text-left">Wilayah</div>,
+        cell: (info) => {
+          const id = info.getValue() as number
+          const reg = regionById.get(id)
+          if (!reg) {
+            return (
+              <span className="text-xs text-muted-foreground">
+                Wilayah #{id}
+              </span>
+            )
+          }
+          return (
+            <div className="inline-flex items-center gap-2">
+              <span
+                className="inline-block size-2.5 shrink-0 rounded-full"
+                style={{ backgroundColor: reg.warna }}
+                aria-hidden="true"
+              />
+              <span className="text-xs font-medium text-foreground">
+                {reg.nama}
+              </span>
+              <span className="text-[11px] font-mono text-muted-foreground">
+                {reg.kode}
+              </span>
+            </div>
+          )
+        },
+      },
       {
         accessorKey: "judul",
         header: () => <div className="font-semibold text-left">Indikator</div>,
@@ -254,9 +321,10 @@ export function MakroEkonomiTable() {
         deleteLabel: "Hapus Indikator",
       }),
     ]
-  }, [handleToggleStatus, pendingIds])
+  }, [handleToggleStatus, pendingIds, regionById])
 
-  const hasActiveFilters = searchQuery !== "" || statusFilter !== "all"
+  const hasActiveFilters =
+    searchQuery !== "" || regionFilter !== "all" || statusFilter !== "all"
 
   return (
     <div className="space-y-6">
@@ -266,7 +334,7 @@ export function MakroEkonomiTable() {
       {/* 2. Tabel Data Indikator Makro Ekonomi */}
       <DataTable
         title="Indikator Makro Ekonomi"
-        description="Kelola daftar indikator makro ekonomi Kota Dumai yang ditampilkan pada carousel videotron."
+        description="Kelola daftar indikator makro ekonomi per wilayah (Nasional, Provinsi Riau, dan Kabupaten/Kota) untuk halaman grafik serta videotron."
         data={filteredData}
         columns={columns}
         isLoading={isLoading}
@@ -279,9 +347,17 @@ export function MakroEkonomiTable() {
         search={{
           value: searchQuery,
           onChange: setSearchQuery,
-          placeholder: "Cari nama indikator atau tahun...",
+          placeholder: "Cari indikator, wilayah, atau tahun...",
         }}
         filters={[
+          {
+            key: "region",
+            value: regionFilter,
+            onChange: (val: string) => setRegionFilter(val || "all"),
+            placeholder: "Pilih wilayah",
+            options: regionFilterOptions,
+            className: "w-full sm:w-56",
+          },
           {
             key: "status",
             value: statusFilter,
@@ -293,6 +369,7 @@ export function MakroEkonomiTable() {
         hasActiveFilters={hasActiveFilters}
         onResetFilters={() => {
           setSearchQuery("")
+          setRegionFilter("all")
           setStatusFilter("all")
         }}
       />
@@ -301,6 +378,7 @@ export function MakroEkonomiTable() {
       <AddMakroEkonomiDialog
         open={isAddOpen}
         onOpenChange={setIsAddOpen}
+        regions={regions}
         onRefresh={() => fetchData(true)}
       />
 
@@ -308,6 +386,7 @@ export function MakroEkonomiTable() {
         open={isEditOpen}
         onOpenChange={setIsEditOpen}
         item={itemToEdit}
+        regions={regions}
         onRefresh={() => fetchData(true)}
       />
 

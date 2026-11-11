@@ -48,8 +48,9 @@ No file uploads: media fields (promo image, video, PANDU logo and QR, instansi l
 - `Promo`: id, judul, gambarUrl, urutan, isActive
 - `RunningText`: id, isi, isActive
 - `Video`: id, judul, url, urutan, isActive
-- `Pandu` (single row): nama, deskripsi, logoUrl, qrUrl, telegramUsername
-- `Setting`: key, value (namaInstansi, slogan, logoUrl)
+- `Regions`: id, kode, nama, level (`nasional` | `provinsi` | `kabkota`), parentId, warna, isActive
+- `MakroEkonomi`: id, regionId, judul, nilai, satuan, tahun, tren, urutan, isActive
+- `Setting`: key, value (namaInstansi, slogan, logoUrl, makroQrUrl, makroQrLabel, makroWilayahDefault)
 - `User`: id, email, passwordHash
 
 ## Config (env, typed in `lib/config.ts`)

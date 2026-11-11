@@ -27,6 +27,12 @@ export async function updateSettings(
   if (data.makroQrLabel !== undefined) {
     items.push({ key: "makroQrLabel", value: data.makroQrLabel ?? "" });
   }
+  if (data.makroWilayahDefault !== undefined) {
+    items.push({
+      key: "makroWilayahDefault",
+      value: data.makroWilayahDefault ?? "",
+    });
+  }
 
   const updatedMap = await settingModel.setMany(items);
   await broadcastPanelUpdate("setting");

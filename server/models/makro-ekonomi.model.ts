@@ -1,23 +1,41 @@
 import "server-only";
-import { eq, asc } from "drizzle-orm";
+import { and, eq, asc, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { makroEkonomi } from "@/db/schema";
+import { makroEkonomi, regions } from "@/db/schema";
 
 export type MakroEkonomiRow = typeof makroEkonomi.$inferSelect;
 export type CreateMakroEkonomiRow = typeof makroEkonomi.$inferInsert;
 
-export async function all(): Promise<MakroEkonomiRow[]> {
+export type MakroFilter = {
+  /** Restrict to these regions; undefined means every region. */
+  regionIds?: number[];
+};
+
+function regionCondition(filter: MakroFilter) {
+  return filter.regionIds
+    ? inArray(makroEkonomi.regionId, filter.regionIds)
+    : undefined;
+}
+
+export async function all(
+  filter: MakroFilter = {}
+): Promise<MakroEkonomiRow[]> {
+  if (filter.regionIds?.length === 0) return [];
   return db
     .select()
     .from(makroEkonomi)
+    .where(regionCondition(filter))
     .orderBy(asc(makroEkonomi.urutan), asc(makroEkonomi.id));
 }
 
-export async function active(): Promise<MakroEkonomiRow[]> {
+export async function active(
+  filter: MakroFilter = {}
+): Promise<MakroEkonomiRow[]> {
+  if (filter.regionIds?.length === 0) return [];
   return db
     .select()
     .from(makroEkonomi)
-    .where(eq(makroEkonomi.isActive, true))
+    .where(and(eq(makroEkonomi.isActive, true), regionCondition(filter)))
     .orderBy(asc(makroEkonomi.urutan), asc(makroEkonomi.id));
 }
 
@@ -41,6 +59,7 @@ export type MakroTren =
   | "turun";
 
 export async function create(data: {
+  regionId?: number;
   judul: string;
   nilai: string;
   satuan?: string;
@@ -52,6 +71,10 @@ export async function create(data: {
   const rows = await db
     .insert(makroEkonomi)
     .values({
+      // Until T25 adds region input to the admin form, new rows default to Kota Dumai (14.72).
+      regionId:
+        data.regionId ??
+        sql`(select ${regions.id} from ${regions} where ${regions.kode} = '14.72')`,
       judul: data.judul,
       nilai: data.nilai,
       satuan: data.satuan ?? "%",
@@ -68,6 +91,7 @@ export async function create(data: {
 export async function update(
   id: number,
   data: Partial<{
+    regionId: number;
     judul: string;
     nilai: string;
     satuan: string;

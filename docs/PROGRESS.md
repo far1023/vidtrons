@@ -164,7 +164,7 @@ T1 to T15 done. Login & Admin Layout completed! Next task: T16 (Admin CRUD: Peng
     - Mengembalikan ukuran baris panel waktu ke semula (`--rows-left: 38fr 62fr`) di [app/globals.css](file:///c:/Users/admin/.gemini/antigravity/scratch/bppddmi-videotron/app/globals.css) agar proporsi panel jam, cuaca, dan jadwal sholat tetap persis seperti yang telah disetujui sebelumnya.
     - Mengonfigurasi [components/display/promo-panel.tsx](file:///c:/Users/admin/.gemini/antigravity/scratch/bppddmi-videotron/components/display/promo-panel.tsx) agar lebarnya memenuhi 100% kolom (`w-full`) dengan rasio 4:5 (`aspect-[4/5]`), sehingga tinggi kartu mengikuti proporsi 5 secara otomatis.
     - Menambahkan komponen [components/display/branding-logos.tsx](file:///c:/Users/admin/.gemini/antigravity/scratch/bppddmi-videotron/components/display/branding-logos.tsx) pada sisa ruang vertikal di bawah kartu promo di [components/display/lobby-screen.tsx](file:///c:/Users/admin/.gemini/antigravity/scratch/bppddmi-videotron/components/display/lobby-screen.tsx), yang menampilkan logo resmi daerah ("Dumai Berkhidmat! Menuju Kota Idaman" dari `public/images/berkhidmat colorful.png` dan "#bangga melayani bangsa" dari `public/images/bangga.png`) secara polos tanpa card/border/divider dan memiliki batas tinggi `max-h-[75%]` dari komponen.
-    - Menambahkan helper [lib/media.ts](file:///c:/Users/admin/.gemini/antigravity/scratch/bppddmi-videotron/lib/media.ts) (`normalizeMediaUrl`) yang otomatis mengubah format link Google Drive (`drive.usercontent.google.com/download` maupun `drive.google.com/file/d/`) ke format direct embed CDN (`https://lh3.googleusercontent.com/d/{id}`) agar tidak terblokir oleh browser CORP (*Cross-Origin Resource Policy: same-site*).
+    - Menambahkan helper [lib/media.ts](file:///c:/Users/admin/.gemini/antigravity/scratch/bppddmi-videotron/lib/media.ts) (`normalizeMediaUrl`) yang otomatis mengubah format link Google Drive (`drive.usercontent.google.com/download` maupun `drive.google.com/file/d/`) ke format direct embed CDN (`https://lh3.googleusercontent.com/d/{id}`) agar tidak terblokir oleh browser CORP (_Cross-Origin Resource Policy: same-site_).
   - Standarisasi Tombol CTA Seluruh Form Admin:
     - Menyelaraskan seluruh tombol CTA di `components/forms/` mengacu pada form referensi `running-texts`:
       - Dialog Tambah (`Add`): Tombol "Batal" (`variant="outline"`) dan tombol submit "Simpan Data" (`<Loader2 className="mr-2 size-4 animate-spin" /> Menyimpan...`).
@@ -212,9 +212,10 @@ T1 to T15 done. Login & Admin Layout completed! Next task: T16 (Admin CRUD: Peng
   - Dashboard admin & CRUD Pengguna (permintaan user):
     - Dashboard (pp/(panels)/dashboard/page.tsx + components/dashboard/dashboard-overview.tsx): sapaan, peringatan jika ada jenis konten tanpa item aktif, kartu statistik (pengumuman, agenda, teks berjalan, promo, video, makro ekonomi, pengguna), agenda mendatang, dan pengumuman terbaru; SWR refresh 60 detik. Backend: model/service/resource/controller dashboard + GET /api/admin/dashboard (tanggal memakai DASHBOARD_TIMEZONE).
     - CRUD Pengguna: halaman /pengguna (sudah ada di sidebar, matcher ditambahkan di proxy.ts), components/datatables/pengguna-table.tsx, dialog tambah/ubah/hapus + pengguna-form-fields.tsx (tampil/sembunyi password, buat otomatis). Backend lengkap sesuai BACKEND.md: lib/schemas/user.schema.ts, user.model/resource/service/request/controller, route /api/admin/pengguna dan [id]. Password di-hash bcrypt, hash tidak pernah dikirim ke client.
-    - Aturan: email unik dan disimpan huruf kecil (login ikut dinormalisasi di lib/auth.ts), password minimal 8 karakter, password opsional saat ubah, tidak bisa menghapus akun sendiri maupun pengguna terakhir (ConflictError 409 baru di server/errors/app-error.ts). with-auth.ts kini mengekspor eadSessionToken.
-    - Verifikasi: 
-pm run build lulus; API diuji (buat, duplikat 409, validasi 422, ubah, hapus 204, dashboard).
+    - Aturan: email unik dan disimpan huruf kecil (login ikut dinormalisasi di lib/auth.ts), password minimal 8 karakter, password opsional saat ubah, tidak bisa menghapus akun sendiri maupun pengguna terakhir (ConflictError 409 baru di server/errors/app-error.ts). with-auth.ts kini mengekspor
+      eadSessionToken.
+    - Verifikasi:
+      pm run build lulus; API diuji (buat, duplikat 409, validasi 422, ubah, hapus 204, dashboard).
 
 - Fitur Realtime Pusher per Panel (Layar Lobby):
   - Mengintegrasikan package pusher (server) dan pusher-js (client).
@@ -236,3 +237,58 @@ pm run build lulus; API diuji (buat, duplikat 409, validasi 422, ubah, hapus 204
 - Pengumuman statis pengingat SKP (permintaan user):
   - `lib/skp-reminder.ts` (`buildSkpReminder`): bukan data database. Memakai tanggal di `DASHBOARD_TIMEZONE`. 5 hari terakhir bulan menampilkan pengingat input SKP periode bulan berjalan; tanggal 1 sampai 5 menampilkan pengingat periode bulan sebelumnya (Januari mengacu ke Desember tahun lalu). Di luar jendela itu tidak tampil. Jumlah hari diatur lewat `SKP_END_OF_MONTH_DAYS` dan `SKP_START_OF_MONTH_DAYS`.
   - Teks di `lib/labels.ts` (`labels.skp`). Item disisipkan paling atas daftar di `app/(display)/lobby/page.tsx`, kategori "Pengingat".
+
+### T20: Makro ekonomi per wilayah, migrasi DB
+
+- Skema: tabel `regions` (kode Kemendagri, level, parent_id, warna, is_active) dan `makro_ekonomi.region_id` NOT NULL, unique (region_id, lower(judul), tahun). Migrasi `drizzle/0004_makro_region.sql` (satu file, satu transaksi): buat tabel, seed 14 wilayah (Nasional `00`, Provinsi Riau `14`, 10 kabupaten `14.01`-`14.10`, Kota Pekanbaru `14.71`, Kota Dumai `14.72`), isi ulang data lama ke Kota Dumai, lalu NOT NULL. Warna awal: Nasional #b91c1c, Riau #1d4ed8, Dumai #059669; sisanya null (palet cadangan di T22).
+- Rencana awal memisahkan migrasi jadi tiga langkah; dipadatkan jadi satu file karena migrasi pg berjalan dalam satu transaksi.
+- `db/seed.ts` tidak lagi menghapus `regions` (diisi migrasi) dan mengisi makro dengan region Dumai.
+- `makro-ekonomi.model.ts`: `create` menerima `regionId` opsional, default Kota Dumai sampai T21/T25.
+- DB lokal punya riwayat migrasi tidak sinkron (hanya 0000 tercatat, skema sudah di state 0003 dan tanpa tabel pandu), sehingga `db:migrate` gagal di 0001. 0001-0003 ditandai sudah diterapkan di tabel `drizzle.__drizzle_migrations` lokal, lalu 0004 diterapkan. Database lain yang dibuat lewat `db:push` perlu perlakuan serupa.
+
+### T21: Backend regions + perluasan model/service makro dengan `regionIds`
+
+- Layer lengkap `regions`: `server/models/region.model.ts` (`all`, `find`, `findByIds`, `findByKode`, `update` dengan filter `level`, `parentId`, `q`, `activeOnly`), `lib/schemas/region.schema.ts`, `server/requests/region.request.ts`, `server/resources/region.resource.ts`, `server/services/region.service.ts` (cache bertag `REGIONS_CACHE_TAG`, fallback bila `incrementalCache` tidak tersedia di test runner), `server/controllers/region.controller.ts`, serta route publik `GET /api/regions` dan admin `GET /api/admin/regions` + `GET`/`PATCH /api/admin/regions/[id]`.
+- Perluasan `makro-ekonomi`: `all` dan `active` di model menerima `MakroFilter` (`regionIds`), resource memuat `regionId`, schema menerima `regionId` opsional, service memvalidasi keberadaan `regionId` dan memetakan pelanggaran unique `(region_id, lower(judul), tahun)` ke 422 `ValidationError`.
+- `display.service.ts` dan `grafik-makro-ekonomi.service.ts` dibatasi ke Kota Dumai (`14.72`) sebagai default wilayah.
+- Pengujian: ditambahkan `npm test` (`tests/region.validation.test.ts` & `tests/region.integration.test.ts`) yang memverifikasi 23 kasus uji untuk skema, request, model, service, controller, dan route handler.
+
+### T22: `GET /api/makro` multi-wilayah (cache bertag) + `buildGrafikMakro` multi-seri
+
+- Token palet warna cadangan wilayah `--chart-region-1..8` ditambahkan di `app/globals.css`.
+- Helper murni di `lib/makro-ekonomi.ts`: `buildGrafikMakroMulti(rows, regions, jumlahTahun)` mengelompokkan per `judul` lalu per `regionId` sesuai urutan wilayah yang diminta, `resolveRegionColors(regions)` mengisi warna cadangan tanpa bentrok dengan warna eksplisit, dan `pivotSeriByTahun(seri, tahunAwal, tahunAkhir)` memivot titik tahunan untuk Recharts. `buildGrafikMakro` satu seri tetap dipertahankan agar komponen yang belum direfaktor di T23 tetap jalan.
+- Endpoint `GET /api/makro` melalui layer: `grafikMakroQuerySchema` (`regionIds` CSV maks 5 ID unik positif, `tahun` 1..20 default 5), `parseGrafikMakroRequest`, `makroEkonomiController.publicGrafik`, `getGrafikMakroMulti` di `grafik-makro-ekonomi.service.ts` (cache bertag `DISPLAY_CACHE_TAG` + `REGIONS_CACHE_TAG`, default wilayah Kota Dumai `14.72`), dan `toGrafikMakroMultiResource`.
+- Pengujian: `tests/makro-multi.unit.test.ts` + kasus integrasi `GET /api/makro` di `tests/region.integration.test.ts` (total 33 tes lulus semua).
+
+### T23: `use-makro-data` + refactor `IndikatorChartCard` multi-seri, warna per wilayah, legenda
+
+- Hook SWR `hooks/use-makro-data.ts`: memanggil `GET /api/makro?regionIds=...` satu kali untuk seluruh halaman, dengan `fallbackData` dari server dan cadangan memori + `localStorage` per kombinasi wilayah.
+- Refactor `components/makro/indikator-chart-card.tsx`: menerima `IndikatorMulti` + `regions: ResolvedRegionInfo[]`, membangun `ChartConfig` dinamis (`r{regionId}`) dengan warna wilayah, merender satu `Line`/`Bar` per seri, menampilkan `ChartLegend` saat lebih dari satu wilayah, mengurutkan item tooltip dari nilai tertinggi, menampilkan daftar ringkasan nilai terbaru + tren per wilayah saat multi-seri, serta menyertakan struktur `sr-only` per wilayah dan per tahun.
+- Komponen `components/makro/makro-charts-view.tsx` (dilengkapi state loading, error dengan tombol muat ulang, dan empty state) dipakai di `app/grafik-makro-ekonomi/page.tsx`.
+- Helper `buildMakroEndpointUrl` dan `computeYDomain` di `lib/makro-ekonomi.ts` diuji di `tests/makro-multi.unit.test.ts` (11 unit test lulus, `tsc --noEmit` bersih).
+
+### T24: `RegionFilter` + sinkronisasi query string + wilayah bawaan display
+
+- Komponen `components/makro/region-filter.tsx`: pemilih wilayah bertingkat (Nasional, Provinsi, Kabupaten/Kota) berbasis shadcn `Popover`, `Input`, `ScrollArea`, `Badge`, dan `Button` dengan pencarian nama/kode wilayah, chip wilayah terpilih (maksimal 5 wilayah), dan tombol reset ke Kota Dumai.
+- Sinkronisasi query string `?wilayah=14.72,14,00` (memakai `kode` Kemendagri, bukan ID internal) di `components/makro/makro-charts-view.tsx` dan SSR initial fetch di `app/grafik-makro-ekonomi/page.tsx` melalui helper murni `resolveRegionsFromWilayahParam` & `formatWilayahQueryParam` di `lib/makro-ekonomi.ts`.
+- Pengaturan wilayah bawaan layar lobi: key `makroWilayahDefault` ditambahkan pada `lib/schemas/setting.schema.ts`, `server/services/setting.service.ts`, `server/services/display.service.ts` (default `"14.72"` Kota Dumai), `db/seed.ts`, dan didokumentasikan di `docs/SPEC.md`.
+- Pengujian: 14 unit test di `tests/makro-multi.unit.test.ts` lulus semua dan `tsc --noEmit` bersih.
+
+### T25: Admin halaman Wilayah (warna) + form Makro dengan wilayah
+
+- Halaman admin wilayah (`app/(panels)/wilayah/page.tsx`) dengan `components/datatables/regions-table.tsx` dan `components/forms/regions/edit-region-dialog.tsx`, ditambahkan ke menu sidebar (`components/app-sidebar.tsx`): menampilkan daftar wilayah (Nasional, Provinsi, Kabupaten/Kota), pencarian nama/kode, filter tingkat dan status, switch inline `isActive` (`PATCH /api/admin/regions/[id]`), serta dialog pengaturan warna grafik (pemilih warna + input hex `#RRGGBB` + palet cepat kontras + opsi kembali ke palet otomatis `warna: null`).
+- Form dan tabel admin Makro Ekonomi (`components/datatables/makro-ekonomi-table.tsx`, `add-makro-ekonomi-dialog.tsx`, `edit-makro-ekonomi-dialog.tsx`, `lib/schemas/makro-ekonomi.schema.ts`): `regionId` wajib pada pembuatan data baru (default terpilih Kota Dumai `14.72`), kolom Wilayah beserta titik warna grafik di tabel, dan filter dropdown per wilayah.
+- Pengujian: 24 unit test (`tests/region.validation.test.ts` & `tests/makro-multi.unit.test.ts`) lulus semua.
+
+### T26: Verifikasi: 1 vs 5 wilayah, data kosong, wilayah tanpa data, dan audit query Neon
+
+- Audit query & cache Neon:
+  - `GET /api/display` (`display.service.ts`), `GET /api/makro` (`grafik-makro-ekonomi.service.ts`), dan `GET /api/regions` (`region.service.ts`) seluruhnya dibungkus `unstable_cache` dengan tag `DISPLAY_CACHE_TAG` / `REGIONS_CACHE_TAG`, sehingga polling klien tidak memicu query database berulang di produksi.
+  - Optimasi `fetchRawDisplayFeed` di `server/services/display.service.ts` agar meneruskan `settingsMap` hasil `Promise.all` langsung ke `activeMakroForDisplay(settingsMap)` dan menghindari pemanggilan `settingModel.getMap()` ganda saat cache miss.
+- Pengujian unit (`tests/makro-multi.unit.test.ts` & `tests/region.validation.test.ts`):
+  - Skenario 1 wilayah vs 5 wilayah sekaligus (termasuk wilayah dengan tahun parsial dan wilayah tanpa baris data sama sekali).
+  - Skenario data kosong (`rows = []`), daftar wilayah kosong (`regions = []`), wilayah terpilih tanpa data (`null` tanpa crash), serta fallback domain Y (`[0, 1]`).
+  - Seluruh 26 unit test dan pemeriksaan tipe `npx tsc --noEmit` lulus tanpa error.
+- Penambahan CRUD penuh untuk `regions` (permintaan user):
+  - Backend: `createRegionSchema` & perluasan `updateRegionSchema` di `lib/schemas/region.schema.ts`, `parseStoreRegionRequest` di `server/requests/region.request.ts`, `create` & `remove` di `server/models/region.model.ts`, `createRegion` & `deleteRegion` (validasi induk, penanganan duplikasi `kode` `23505` & proteksi FK `23503`) di `server/services/region.service.ts`, `store` & `destroy` di `server/controllers/region.controller.ts`, serta route `POST /api/admin/regions` dan `PUT`/`DELETE /api/admin/regions/[id]`.
+  - Admin UI: `components/forms/regions/add-region-dialog.tsx`, perluasan `components/forms/regions/edit-region-dialog.tsx`, `components/forms/regions/delete-region-dialog.tsx`, dan pembaruan `components/datatables/regions-table.tsx` (tombol Tambah Wilayah, kolom Induk, serta menu aksi Edit & Hapus Wilayah).

@@ -4,7 +4,8 @@ import { MakroEkonomiTable } from "@/components/datatables/makro-ekonomi-table"
 
 export const metadata = {
   title: "Data Makro Ekonomi - Admin Layar Lobby Bappeda",
-  description: "Manajemen data indikator makro ekonomi Kota Dumai dan QR code",
+  description:
+    "Manajemen data indikator makro ekonomi multi-wilayah dan QR code",
 }
 
 export default function MakroEkonomiPage() {
@@ -17,7 +18,7 @@ export default function MakroEkonomiPage() {
             orientation="vertical"
             className="mr-1 h-6 data-vertical:self-auto"
           />
-          <h1 className="text-base font-medium">Makro Ekonomi Kota Dumai</h1>
+          <h1 className="text-base font-medium">Makro Ekonomi</h1>
         </div>
       </header>
       <div className="flex flex-1 flex-col p-4 md:p-6">

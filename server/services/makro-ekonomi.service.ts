@@ -1,18 +1,23 @@
 import "server-only";
-import { NotFoundError } from "@/server/errors/app-error";
+import { NotFoundError, ValidationError } from "@/server/errors/app-error";
 import { broadcastPanelUpdate } from "@/server/services/realtime.service";
 import * as makroEkonomiModel from "@/server/models/makro-ekonomi.model";
+import * as regionModel from "@/server/models/region.model";
 import type {
   CreateMakroEkonomiInput,
   UpdateMakroEkonomiInput,
 } from "@/lib/schemas/makro-ekonomi.schema";
 
-export async function getAllMakroEkonomi(): Promise<makroEkonomiModel.MakroEkonomiRow[]> {
-  return makroEkonomiModel.all();
+export async function getAllMakroEkonomi(
+  filter: makroEkonomiModel.MakroFilter = {}
+): Promise<makroEkonomiModel.MakroEkonomiRow[]> {
+  return makroEkonomiModel.all(filter);
 }
 
-export async function getActiveMakroEkonomi(): Promise<makroEkonomiModel.MakroEkonomiRow[]> {
-  return makroEkonomiModel.active();
+export async function getActiveMakroEkonomi(
+  filter: makroEkonomiModel.MakroFilter = {}
+): Promise<makroEkonomiModel.MakroEkonomiRow[]> {
+  return makroEkonomiModel.active(filter);
 }
 
 export async function getMakroEkonomiById(
@@ -25,10 +30,42 @@ export async function getMakroEkonomiById(
   return item;
 }
 
+async function assertRegionExists(regionId: number): Promise<void> {
+  const region = await regionModel.find(regionId);
+  if (!region) {
+    throw new ValidationError("Validasi data indikator makro ekonomi gagal", {
+      regionId: [`Wilayah dengan ID ${regionId} tidak ditemukan`],
+    });
+  }
+}
+
+/** Postgres unique_violation (23505), possibly wrapped by the driver. */
+function isUniqueViolation(error: unknown): boolean {
+  const code = (e: unknown) => (e as { code?: string } | null)?.code;
+  return (
+    code(error) === "23505" ||
+    code((error as { cause?: unknown } | null)?.cause) === "23505"
+  );
+}
+
+function duplicateError(): ValidationError {
+  return new ValidationError("Validasi data indikator makro ekonomi gagal", {
+    tahun: ["Data untuk wilayah, indikator, dan tahun ini sudah ada"],
+  });
+}
+
 export async function createMakroEkonomi(
   data: CreateMakroEkonomiInput
 ): Promise<makroEkonomiModel.MakroEkonomiRow> {
-  const created = await makroEkonomiModel.create(data);
+  if (data.regionId !== undefined) await assertRegionExists(data.regionId);
+
+  let created: makroEkonomiModel.MakroEkonomiRow;
+  try {
+    created = await makroEkonomiModel.create(data);
+  } catch (error) {
+    if (isUniqueViolation(error)) throw duplicateError();
+    throw error;
+  }
   await broadcastPanelUpdate("makroEkonomi");
   return created;
 }
@@ -41,8 +78,15 @@ export async function updateMakroEkonomi(
   if (!existing) {
     throw new NotFoundError(`Indikator makro ekonomi dengan ID ${id} tidak ditemukan`);
   }
+  if (data.regionId !== undefined) await assertRegionExists(data.regionId);
 
-  const updated = await makroEkonomiModel.update(id, data);
+  let updated: makroEkonomiModel.MakroEkonomiRow | null;
+  try {
+    updated = await makroEkonomiModel.update(id, data);
+  } catch (error) {
+    if (isUniqueViolation(error)) throw duplicateError();
+    throw error;
+  }
   if (!updated) {
     throw new NotFoundError(`Indikator makro ekonomi dengan ID ${id} tidak ditemukan`);
   }
