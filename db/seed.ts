@@ -4,6 +4,7 @@ import { eq, isNotNull } from "drizzle-orm"
 
 import { createDb } from "./client"
 import * as schema from "./schema"
+import { seedMakroEkonomi } from "./seed-makro"
 
 /**
  * Development seed. WIPES every table, then inserts sample data.
@@ -154,63 +155,7 @@ async function main() {
     )
     .returning()
 
-  const dumai = kabKotaRows.find((r) => r.kode === "14.72")
-  if (!dumai) {
-    throw new Error("Region 14.72 (Kota Dumai) missing after seed")
-  }
-
-  await db.insert(schema.makroEkonomi).values(
-    [
-      {
-        judul: "Pertumbuhan Ekonomi",
-        nilai: "5,21",
-        satuan: "%",
-        tahun: "2024",
-        tren: "naik_positif",
-        urutan: 1,
-      },
-      {
-        judul: "Inflasi Tahunan",
-        nilai: "2,14",
-        satuan: "%",
-        tahun: "2024",
-        tren: "turun_positif",
-        urutan: 2,
-      },
-      {
-        judul: "Indeks Pembangunan Manusia (IPM)",
-        nilai: "76,40",
-        satuan: "Poin",
-        tahun: "2024",
-        tren: "naik_positif",
-        urutan: 3,
-      },
-      {
-        judul: "Tingkat Pengangguran Terbuka (TPT)",
-        nilai: "5,82",
-        satuan: "%",
-        tahun: "2024",
-        tren: "turun_positif",
-        urutan: 4,
-      },
-      {
-        judul: "Tingkat Kemiskinan",
-        nilai: "3,11",
-        satuan: "%",
-        tahun: "2024",
-        tren: "turun_positif",
-        urutan: 5,
-      },
-      {
-        judul: "PDRB ADHB",
-        nilai: "128,5",
-        satuan: "Triliun Rp",
-        tahun: "2024",
-        tren: "naik_positif",
-        urutan: 6,
-      },
-    ].map((row) => ({ ...row, regionId: dumai.id }))
-  )
+  await seedMakroEkonomi(db)
 
   await db.insert(schema.setting).values([
     { key: "namaInstansi", value: "Bappeda" },
