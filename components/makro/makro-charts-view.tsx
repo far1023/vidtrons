@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
 import { IndikatorChartCard } from "@/components/makro/indikator-chart-card"
@@ -64,10 +64,22 @@ export function MakroChartsView({
     )
   }, [initialData, selectedRegionIds])
 
-  const { data, isLoading, error, refresh } = useMakroData({
+  const [isManualRefreshing, setIsManualRefreshing] = useState(false)
+
+  const { data, isLoading, isValidating, error, refresh } = useMakroData({
     regionIds: selectedRegionIds,
     fallbackData: matchesInitial ? initialData : undefined,
   })
+
+  async function handleRefresh() {
+    setIsManualRefreshing(true)
+    try {
+      await refresh()
+      router.refresh()
+    } finally {
+      setIsManualRefreshing(false)
+    }
+  }
 
   function handleChangeKodes(nextKodes: string[]) {
     const params = new URLSearchParams(searchParams?.toString() ?? "")
@@ -89,6 +101,8 @@ export function MakroChartsView({
           selectedKodes={selectedKodes}
           onChange={handleChangeKodes}
           defaultKode={defaultKode}
+          onRefresh={() => void handleRefresh()}
+          isRefreshing={isManualRefreshing || isValidating}
         />
       )}
 

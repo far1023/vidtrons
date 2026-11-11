@@ -2,8 +2,6 @@
 
 import { ArrowDown, ArrowUp, Minus } from "lucide-react"
 import {
-  Bar,
-  BarChart,
   CartesianGrid,
   LabelList,
   Line,
@@ -67,7 +65,7 @@ export function IndikatorChartCard({
   tahunAwal: propTahunAwal,
   tahunAkhir: propTahunAkhir,
 }: IndikatorChartCardProps) {
-  const { judul, satuan, jenisGrafik, seri } = indikator
+  const { judul, satuan, seri } = indikator
   if (seri.length === 0) return null
 
   const regionById = new Map(regions.map((r) => [r.id, r]))
@@ -86,7 +84,7 @@ export function IndikatorChartCard({
   }
 
   const chartData = pivotSeriByTahun(seri, tahunAwal, tahunAkhir)
-  const domain = computeYDomain(seri, jenisGrafik)
+  const domain = computeYDomain(seri, "garis")
   const isSingleSeries = seri.length === 1
   const showPointLabels = seri.length <= 2
 
@@ -264,77 +262,42 @@ export function IndikatorChartCard({
             isSingleSeries ? "h-52 sm:h-56" : "h-60 sm:h-64"
           )}
         >
-          {jenisGrafik === "batang" ? (
-            <BarChart data={chartData} margin={margin}>
-              <CartesianGrid vertical={false} />
-              <XAxis
-                dataKey="tahun"
-                tickLine={false}
-                axisLine={false}
-                tickMargin={8}
-              />
-              <YAxis hide domain={domain} />
-              {tooltip}
-              {!isSingleSeries && (
-                <ChartLegend content={<ChartLegendContent />} />
-              )}
-              {seri.map((s, idx) => (
-                <Bar
-                  key={s.regionId}
-                  dataKey={`r${s.regionId}`}
-                  fill={`var(--color-r${s.regionId})`}
-                  radius={6}
-                >
-                  {showPointLabels && idx === 0 && (
-                    <LabelList
-                      dataKey={`r${s.regionId}_label`}
-                      position="top"
-                      offset={10}
-                      fontSize={12}
-                      className="fill-foreground font-medium"
-                    />
-                  )}
-                </Bar>
-              ))}
-            </BarChart>
-          ) : (
-            <LineChart data={chartData} margin={margin}>
-              <CartesianGrid vertical={false} />
-              <XAxis
-                dataKey="tahun"
-                tickLine={false}
-                axisLine={false}
-                tickMargin={8}
-              />
-              <YAxis hide domain={domain} />
-              {tooltip}
-              {!isSingleSeries && (
-                <ChartLegend content={<ChartLegendContent />} />
-              )}
-              {seri.map((s, idx) => (
-                <Line
-                  key={s.regionId}
-                  dataKey={`r${s.regionId}`}
-                  type="monotone"
-                  stroke={`var(--color-r${s.regionId})`}
-                  strokeWidth={2.75}
-                  dot={{ r: 4, fill: `var(--color-r${s.regionId})` }}
-                  activeDot={{ r: 6 }}
-                  connectNulls={false}
-                >
-                  {showPointLabels && idx === 0 && (
-                    <LabelList
-                      dataKey={`r${s.regionId}_label`}
-                      position="top"
-                      offset={10}
-                      fontSize={12}
-                      className="fill-foreground font-medium"
-                    />
-                  )}
-                </Line>
-              ))}
-            </LineChart>
-          )}
+          <LineChart data={chartData} margin={margin}>
+            <CartesianGrid vertical={false} />
+            <XAxis
+              dataKey="tahun"
+              tickLine={false}
+              axisLine={false}
+              tickMargin={8}
+            />
+            <YAxis hide domain={domain} />
+            {tooltip}
+            {!isSingleSeries && (
+              <ChartLegend content={<ChartLegendContent />} />
+            )}
+            {seri.map((s, idx) => (
+              <Line
+                key={s.regionId}
+                dataKey={`r${s.regionId}`}
+                type="monotone"
+                stroke={`var(--color-r${s.regionId})`}
+                strokeWidth={2.75}
+                dot={{ r: 4, fill: `var(--color-r${s.regionId})` }}
+                activeDot={{ r: 6 }}
+                connectNulls={false}
+              >
+                {showPointLabels && idx === 0 && (
+                  <LabelList
+                    dataKey={`r${s.regionId}_label`}
+                    position="top"
+                    offset={10}
+                    fontSize={12}
+                    className="fill-foreground font-medium"
+                  />
+                )}
+              </Line>
+            ))}
+          </LineChart>
         </ChartContainer>
 
         {tahunKosongSingle.length > 0 && (

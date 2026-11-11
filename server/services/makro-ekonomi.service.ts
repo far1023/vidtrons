@@ -1,5 +1,6 @@
 import "server-only";
 import { NotFoundError, ValidationError } from "@/server/errors/app-error";
+import { revalidateMakroCache } from "@/server/services/cache";
 import { broadcastPanelUpdate } from "@/server/services/realtime.service";
 import * as makroEkonomiModel from "@/server/models/makro-ekonomi.model";
 import * as regionModel from "@/server/models/region.model";
@@ -108,4 +109,17 @@ export async function deleteMakroEkonomi(id: number): Promise<boolean> {
 
   await broadcastPanelUpdate("makroEkonomi");
   return true;
+}
+
+/**
+ * Clears all server caches related to macro-economic indicators and regions,
+ * broadcasts a realtime update to connected lobby displays, and returns
+ * the freshly queried macro-economic rows from the database.
+ */
+export async function refreshMakroEkonomi(): Promise<
+  makroEkonomiModel.MakroEkonomiRow[]
+> {
+  revalidateMakroCache();
+  await broadcastPanelUpdate("makroEkonomi");
+  return makroEkonomiModel.all();
 }

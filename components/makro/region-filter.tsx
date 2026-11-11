@@ -1,7 +1,15 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { Check, ChevronsUpDown, MapPin, RotateCcw, Search, X } from "lucide-react"
+import {
+  Check,
+  ChevronsUpDown,
+  MapPin,
+  RefreshCw,
+  RotateCcw,
+  Search,
+  X,
+} from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -25,6 +33,8 @@ export type RegionFilterProps = {
   selectedKodes: readonly string[]
   onChange: (nextKodes: string[]) => void
   defaultKode?: string
+  onRefresh?: () => void
+  isRefreshing?: boolean
 }
 
 const LEVEL_GROUPS = [
@@ -38,6 +48,8 @@ export function RegionFilter({
   selectedKodes,
   onChange,
   defaultKode = DEFAULT_WILAYAH_KODE,
+  onRefresh,
+  isRefreshing = false,
 }: RegionFilterProps) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState("")
@@ -48,9 +60,7 @@ export function RegionFilter({
   )
 
   const selectedRegions = useMemo(() => {
-    const byKode = new Map(
-      regions.map((r) => [r.kode.toLowerCase(), r])
-    )
+    const byKode = new Map(regions.map((r) => [r.kode.toLowerCase(), r]))
     const ordered: RegionInfo[] = []
     for (const k of selectedKodes) {
       const found = byKode.get(k.toLowerCase())
@@ -64,8 +74,7 @@ export function RegionFilter({
     const matching = q
       ? regions.filter(
           (r) =>
-            r.nama.toLowerCase().includes(q) ||
-            r.kode.toLowerCase().includes(q)
+            r.nama.toLowerCase().includes(q) || r.kode.toLowerCase().includes(q)
         )
       : regions
 
@@ -144,6 +153,24 @@ export function RegionFilter({
             >
               <RotateCcw className="size-3.5" />
               Reset ke Kota Dumai
+            </Button>
+          )}
+
+          {onRefresh && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onRefresh}
+              disabled={isRefreshing}
+              title="Bersihkan cache dan muat ulang data makro dari database"
+              aria-label="Muat ulang data makro"
+              className="h-9 gap-1.5 text-xs font-medium"
+            >
+              <RefreshCw
+                className={cn("size-3.5", isRefreshing && "animate-spin")}
+              />
+              <span className="hidden sm:inline">Muat Ulang</span>
             </Button>
           )}
 
@@ -275,4 +302,3 @@ export function RegionFilter({
     </div>
   )
 }
-

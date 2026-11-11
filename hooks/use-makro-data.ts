@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import useSWR from "swr"
 import {
   buildMakroEndpointUrl,
@@ -10,6 +10,31 @@ import {
 export { buildMakroEndpointUrl }
 
 const STORAGE_KEY_PREFIX = "bppddmi_makro_multi_cache:"
+
+/**
+ * Clears all client-side localStorage caches related to macro-economic charts
+ * and the lobby display feed.
+ */
+export function clearMakroLocalStorageCache(): void {
+  try {
+    const keysToRemove: string[] = []
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (
+        key &&
+        (key.startsWith(STORAGE_KEY_PREFIX) ||
+          key === "bppddmi_display_feed_v1")
+      ) {
+        keysToRemove.push(key)
+      }
+    }
+    for (const key of keysToRemove) {
+      localStorage.removeItem(key)
+    }
+  } catch {
+    // ignore storage errors on restricted browsers
+  }
+}
 
 export type UseMakroDataOptions = {
   /** Selected region IDs (at most 5). Omit or empty for the default region. */
@@ -70,6 +95,30 @@ export function useMakroData(options: UseMakroDataOptions = {}) {
       },
     })
 
+  const refresh = useCallback(async () => {
+    clearMakroLocalStorageCache()
+    const refreshUrl = `${url}${url.includes("?") ? "&" : "?"}refresh=1`
+    const response = await fetch(refreshUrl, { cache: "no-store" })
+    if (!response.ok) {
+      throw new Error(
+        `Gagal memuat ulang data grafik makro: HTTP ${response.status}`
+      )
+    }
+    const json = await response.json()
+    const freshData = (json?.data ?? null) as GrafikMakroMulti | null
+    memoryFallbackRef.current = freshData
+    setCachedData(freshData)
+    if (freshData) {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(freshData))
+      } catch {
+        // ignore quota errors
+      }
+    }
+    await mutate(freshData, { revalidate: false })
+    return freshData
+  }, [url, storageKey, mutate])
+
   const effectiveData =
     data !== undefined
       ? data
@@ -80,7 +129,6 @@ export function useMakroData(options: UseMakroDataOptions = {}) {
     isLoading: isLoading && !effectiveData,
     isValidating,
     error,
-    refresh: mutate,
+    refresh,
   }
 }
-

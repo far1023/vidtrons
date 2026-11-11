@@ -299,12 +299,10 @@ export function buildGrafikMakro(
     const satuan = latestRow.satuan.trim()
     const delta = computeDelta(terbaru, pembanding, latestRow, satuan)
 
-    const satuanKecil = satuan.toLowerCase()
     indikator.push({
       judul,
       satuan,
-      jenisGrafik:
-        satuanKecil === "%" || satuanKecil === "poin" ? "garis" : "batang",
+      jenisGrafik: "garis",
       tahunTerbaru: terbaru.tahun,
       nilaiTerbaru: terbaru.nilaiLabel ?? "",
       delta,
@@ -427,12 +425,10 @@ export function buildGrafikMakroMulti(
     if (seri.length === 0) continue
 
     const satuan = primarySatuan ?? "%"
-    const satuanKecil = satuan.toLowerCase()
     indikator.push({
       judul,
       satuan,
-      jenisGrafik:
-        satuanKecil === "%" || satuanKecil === "poin" ? "garis" : "batang",
+      jenisGrafik: "garis",
       urutan: primaryUrutan ?? 0,
       seri,
     })
@@ -539,8 +535,7 @@ export function resolveRegionsFromWilayahParam(
   }
 
   if (matched.length === 0) {
-    const def =
-      byKode.get(defaultKode.toLowerCase()) ?? availableRegions[0]
+    const def = byKode.get(defaultKode.toLowerCase()) ?? availableRegions[0]
     if (def) matched.push(def)
   }
 

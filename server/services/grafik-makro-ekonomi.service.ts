@@ -47,6 +47,7 @@ export async function getGrafikMakroEkonomi(): Promise<GrafikMakro | null> {
 export type GetGrafikMakroMultiOptions = {
   regionIds?: number[]
   tahun?: number
+  forceFresh?: boolean
 }
 
 async function fetchGrafikMulti(
@@ -96,7 +97,7 @@ export async function getGrafikMakroMulti(
       ? options.regionIds.join(",")
       : ""
 
-  if (process.env.NODE_ENV === "development") {
+  if (process.env.NODE_ENV === "development" || options.forceFresh) {
     return fetchGrafikMulti(options.regionIds, jumlahTahun)
   }
 

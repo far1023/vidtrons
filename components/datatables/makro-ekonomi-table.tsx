@@ -26,6 +26,7 @@ import {
   type RegionInfo,
   type ResolvedRegionInfo,
 } from "@/lib/makro-ekonomi"
+import { clearMakroLocalStorageCache } from "@/hooks/use-makro-data"
 
 export function MakroEkonomiTable() {
   const [data, setData] = React.useState<MakroEkonomiItem[]>([])
@@ -36,14 +37,19 @@ export function MakroEkonomiTable() {
   // Filters
   const [searchQuery, setSearchQuery] = React.useState("")
   const [regionFilter, setRegionFilter] = React.useState<string>("all")
-  const [statusFilter, setStatusFilter] = React.useState<"all" | "active" | "inactive">("all")
+  const [statusFilter, setStatusFilter] = React.useState<
+    "all" | "active" | "inactive"
+  >("all")
 
   // Dialogs
   const [isAddOpen, setIsAddOpen] = React.useState(false)
   const [isEditOpen, setIsEditOpen] = React.useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = React.useState(false)
-  const [itemToEdit, setItemToEdit] = React.useState<MakroEkonomiItem | null>(null)
-  const [itemToDelete, setItemToDelete] = React.useState<MakroEkonomiItem | null>(null)
+  const [itemToEdit, setItemToEdit] = React.useState<MakroEkonomiItem | null>(
+    null
+  )
+  const [itemToDelete, setItemToDelete] =
+    React.useState<MakroEkonomiItem | null>(null)
 
   // Fetch API
   const fetchData = React.useCallback(async (silent = false) => {
@@ -71,6 +77,39 @@ export function MakroEkonomiTable() {
       toast.error(message)
     } finally {
       setIsLoading(false)
+      setIsRefreshing(false)
+    }
+  }, [])
+
+  // Clear related server/client caches and repopulate macro data from DB
+  const handleRefresh = React.useCallback(async () => {
+    setIsRefreshing(true)
+    try {
+      clearMakroLocalStorageCache()
+      const [makroRes, regionsRes] = await Promise.all([
+        fetch("/api/admin/makro-ekonomi/refresh", {
+          method: "POST",
+          cache: "no-store",
+        }),
+        fetch("/api/admin/regions", { cache: "no-store" }),
+      ])
+      if (!makroRes.ok) {
+        throw new Error("Gagal menyegarkan data makro ekonomi")
+      }
+      const makroJson = await makroRes.json()
+      setData(makroJson.data || [])
+
+      if (regionsRes.ok) {
+        const regionsJson = await regionsRes.json()
+        const rawRegions: RegionInfo[] = regionsJson.data || []
+        setRegions(resolveRegionColors(rawRegions))
+      }
+      toast.success("Cache dibersihkan dan data makro diperbarui dari database")
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Gagal menyegarkan data makro"
+      toast.error(message)
+    } finally {
       setIsRefreshing(false)
     }
   }, [])
@@ -111,9 +150,7 @@ export function MakroEkonomiTable() {
           body: JSON.stringify({ isActive: next }),
         })
         if (!res.ok) throw new Error("Gagal mengubah status indikator")
-        toast.success(
-          next ? "Indikator diaktifkan" : "Indikator dinonaktifkan"
-        )
+        toast.success(next ? "Indikator diaktifkan" : "Indikator dinonaktifkan")
       } catch (err: unknown) {
         setActive(item.isActive)
         toast.error(
@@ -167,7 +204,7 @@ export function MakroEkonomiTable() {
       createIndexColumn<MakroEkonomiItem>(),
       {
         accessorKey: "regionId",
-        header: () => <div className="font-semibold text-left">Wilayah</div>,
+        header: () => <div className="text-left font-semibold">Wilayah</div>,
         cell: (info) => {
           const id = info.getValue() as number
           const reg = regionById.get(id)
@@ -188,7 +225,7 @@ export function MakroEkonomiTable() {
               <span className="text-xs font-medium text-foreground">
                 {reg.nama}
               </span>
-              <span className="text-[11px] font-mono text-muted-foreground">
+              <span className="font-mono text-[11px] text-muted-foreground">
                 {reg.kode}
               </span>
             </div>
@@ -197,14 +234,18 @@ export function MakroEkonomiTable() {
       },
       {
         accessorKey: "judul",
-        header: () => <div className="font-semibold text-left">Indikator</div>,
+        header: () => <div className="text-left font-semibold">Indikator</div>,
         cell: (info) => (
-          <div className="font-medium text-foreground">{info.getValue() as string}</div>
+          <div className="font-medium text-foreground">
+            {info.getValue() as string}
+          </div>
         ),
       },
       {
         id: "nilai",
-        header: () => <div className="font-semibold text-left">Nilai & Satuan</div>,
+        header: () => (
+          <div className="text-left font-semibold">Nilai & Satuan</div>
+        ),
         cell: ({ row }) => (
           <div className="flex items-baseline gap-1 text-sm font-bold text-emerald-900">
             <span>{row.original.nilai}</span>
@@ -216,7 +257,9 @@ export function MakroEkonomiTable() {
       },
       {
         accessorKey: "tahun",
-        header: () => <div className="font-semibold text-center">Tahun / Periode</div>,
+        header: () => (
+          <div className="text-center font-semibold">Tahun / Periode</div>
+        ),
         cell: (info) => (
           <div className="text-center text-xs font-medium text-muted-foreground">
             {info.getValue() as string}
@@ -225,7 +268,7 @@ export function MakroEkonomiTable() {
       },
       {
         accessorKey: "tren",
-        header: () => <div className="font-semibold text-center">Tren</div>,
+        header: () => <div className="text-center font-semibold">Tren</div>,
         cell: (info) => {
           const val = info.getValue() as string
           if (val === "naik_positif" || val === "naik") {
@@ -295,7 +338,7 @@ export function MakroEkonomiTable() {
       },
       {
         accessorKey: "urutan",
-        header: () => <div className="font-semibold text-center">Urutan</div>,
+        header: () => <div className="text-center font-semibold">Urutan</div>,
         cell: (info) => (
           <div className="text-center text-xs text-muted-foreground">
             {info.getValue() as number}
@@ -339,7 +382,7 @@ export function MakroEkonomiTable() {
         columns={columns}
         isLoading={isLoading}
         isRefreshing={isRefreshing}
-        onRefresh={() => fetchData(true)}
+        onRefresh={handleRefresh}
         onAdd={() => setIsAddOpen(true)}
         addButtonLabel="Tambah Indikator"
         itemNoun="indikator"
@@ -361,7 +404,8 @@ export function MakroEkonomiTable() {
           {
             key: "status",
             value: statusFilter,
-            onChange: (val: string) => setStatusFilter(val as "all" | "active" | "inactive"),
+            onChange: (val: string) =>
+              setStatusFilter(val as "all" | "active" | "inactive"),
             placeholder: "Pilih status",
             options: STATUS_FILTER_OPTIONS,
           },

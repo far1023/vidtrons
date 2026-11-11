@@ -189,7 +189,7 @@ describe("buildGrafikMakroMulti and pivotSeriByTahun", () => {
     assert.equal(pe.seri[0].delta.tahunPembanding, 2023)
 
     const pdrb = res.indikator[1]
-    assert.equal(pdrb.jenisGrafik, "batang")
+    assert.equal(pdrb.jenisGrafik, "garis")
     assert.deepEqual(
       pdrb.seri.map((s) => s.regionId),
       [14]
